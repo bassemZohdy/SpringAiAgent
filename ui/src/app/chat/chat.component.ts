@@ -2,6 +2,14 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { TextFieldModule } from '@angular/cdk/text-field';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -12,190 +20,251 @@ interface Message {
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule, 
+    FormsModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule,
+    MatChipsModule,
+    MatProgressSpinnerModule,
+    TextFieldModule
+  ],
   template: `
-    <div class="chat-container">
-      <div class="chat-header">
-        <h2>Chat with AI Agent</h2>
-        <div class="connection-status" [class.connected]="isConnected">
-          {{ isConnected ? 'Connected' : 'Disconnected' }}
+    <mat-card class="chat-card">
+      <mat-card-header class="chat-header">
+        <mat-card-title class="chat-title">
+          <mat-icon>chat</mat-icon>
+          Chat with AI Agent
+        </mat-card-title>
+        <div class="header-actions">
+          <mat-chip [class.connected]="isConnected" [class.disconnected]="!isConnected">
+            <mat-icon>{{ isConnected ? 'wifi' : 'wifi_off' }}</mat-icon>
+            {{ isConnected ? 'Connected' : 'Disconnected' }}
+          </mat-chip>
         </div>
-      </div>
+      </mat-card-header>
       
-      <div class="chat-messages" #messagesContainer>
-        <div *ngFor="let message of messages" 
-             class="message" 
-             [class.user-message]="message.role === 'user'"
-             [class.assistant-message]="message.role === 'assistant'">
-          <div class="message-content">
-            <div class="message-text">{{ message.content }}</div>
-            <div class="message-time">{{ message.timestamp | date:'short' }}</div>
+      <mat-card-content class="chat-content">
+        <div class="chat-messages" #messagesContainer>
+          <div *ngFor="let message of messages; trackBy: trackMessage" 
+               class="message-wrapper"
+               [class.user-message]="message.role === 'user'"
+               [class.assistant-message]="message.role === 'assistant'">
+            <div class="message-bubble">
+              <div class="message-text">{{ message.content }}</div>
+              <div class="message-time">{{ message.timestamp | date:'short' }}</div>
+            </div>
           </div>
-        </div>
-        
-        <div *ngIf="isLoading" class="message assistant-message">
-          <div class="message-content">
-            <div class="typing-indicator">
-              <span></span>
-              <span></span>
-              <span></span>
+          
+          <div *ngIf="isLoading" class="message-wrapper assistant-message loading-message">
+            <div class="message-bubble">
+              <mat-spinner [diameter]="24"></mat-spinner>
+              <span class="loading-text">AI is thinking...</span>
             </div>
           </div>
         </div>
-      </div>
+      </mat-card-content>
       
-      <div class="chat-input">
-        <div class="input-group">
+      <mat-card-actions class="chat-input">
+        <mat-form-field appearance="outline" class="message-input">
+          <mat-label>Type your message...</mat-label>
           <textarea 
+            matInput
             [(ngModel)]="currentMessage"
             (keydown)="onKeyDown($event)"
-            placeholder="Type your message here..."
             [disabled]="isLoading"
-            rows="3"></textarea>
-          <button 
-            (click)="sendMessage()"
-            [disabled]="!currentMessage.trim() || isLoading"
-            class="btn btn-primary">
-            {{ isLoading ? 'Sending...' : 'Send' }}
-          </button>
-        </div>
-      </div>
-    </div>
+            rows="3"
+            cdkTextareaAutosize
+            #autosize="cdkTextareaAutosize"
+            cdkAutosizeMinRows="1"
+            cdkAutosizeMaxRows="4"></textarea>
+          <mat-icon matSuffix *ngIf="currentMessage.trim()">edit</mat-icon>
+        </mat-form-field>
+        <button 
+          mat-fab
+          color="primary"
+          (click)="sendMessage()"
+          [disabled]="!currentMessage.trim() || isLoading"
+          class="send-button">
+          <mat-icon>{{ isLoading ? 'hourglass_empty' : 'send' }}</mat-icon>
+        </button>
+      </mat-card-actions>
+    </mat-card>
   `,
   styles: [`
-    .chat-container {
-      max-width: 800px;
-      margin: 0 auto;
-      height: 600px;
+    .chat-card {
+      height: 100%;
       display: flex;
       flex-direction: column;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      background: white;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      max-width: 900px;
+      margin: 0 auto;
     }
     
     .chat-header {
-      padding: 1rem;
-      border-bottom: 1px solid #eee;
-      background-color: #f8f9fa;
+      padding: 16px 24px !important;
+      background-color: #f5f5f5;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .chat-title {
       display: flex;
-      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-weight: 500 !important;
+      color: #1976d2 !important;
+    }
+    
+    .header-actions {
+      display: flex;
       align-items: center;
     }
     
-    .chat-header h2 {
-      margin: 0;
-      color: #2c3e50;
+    .header-actions mat-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     
-    .connection-status {
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      background-color: #dc3545;
+    .header-actions mat-chip.connected {
+      background-color: #4caf50;
       color: white;
     }
     
-    .connection-status.connected {
-      background-color: #28a745;
+    .header-actions mat-chip.disconnected {
+      background-color: #f44336;
+      color: white;
+    }
+    
+    .chat-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 0 !important;
     }
     
     .chat-messages {
       flex: 1;
       overflow-y: auto;
-      padding: 1rem;
+      padding: 16px 24px;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 16px;
+      background-color: #fafafa;
     }
     
-    .message {
-      max-width: 70%;
+    .message-wrapper {
+      max-width: 75%;
+      display: flex;
     }
     
-    .user-message {
+    .message-wrapper.user-message {
       align-self: flex-end;
     }
     
-    .assistant-message {
+    .message-wrapper.assistant-message {
       align-self: flex-start;
     }
     
-    .message-content {
-      padding: 0.75rem 1rem;
+    .message-bubble {
+      padding: 12px 16px;
       border-radius: 18px;
       position: relative;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+      animation: messageSlide 0.3s ease-out;
     }
     
-    .user-message .message-content {
-      background-color: #007bff;
+    .user-message .message-bubble {
+      background: linear-gradient(135deg, #1976d2, #1565c0);
       color: white;
+      margin-left: auto;
     }
     
-    .assistant-message .message-content {
-      background-color: #f1f1f1;
+    .assistant-message .message-bubble {
+      background-color: white;
       color: #333;
+      border: 1px solid #e0e0e0;
     }
     
     .message-text {
       word-wrap: break-word;
       white-space: pre-wrap;
+      line-height: 1.5;
+      font-size: 14px;
     }
     
     .message-time {
-      font-size: 0.7rem;
-      opacity: 0.7;
-      margin-top: 4px;
+      font-size: 11px;
+      opacity: 0.6;
+      margin-top: 6px;
+      text-align: right;
     }
     
-    .typing-indicator {
+    .assistant-message .message-time {
+      text-align: left;
+    }
+    
+    .loading-message .message-bubble {
       display: flex;
-      gap: 4px;
       align-items: center;
+      gap: 12px;
+      padding: 16px;
     }
     
-    .typing-indicator span {
-      width: 8px;
-      height: 8px;
-      background-color: #999;
-      border-radius: 50%;
-      animation: typing 1.4s infinite ease-in-out;
-    }
-    
-    .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-    .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-    
-    @keyframes typing {
-      0%, 80%, 100% { opacity: 0.3; }
-      40% { opacity: 1; }
+    .loading-text {
+      font-size: 14px;
+      color: #666;
+      font-style: italic;
     }
     
     .chat-input {
-      padding: 1rem;
-      border-top: 1px solid #eee;
-      background-color: #f8f9fa;
-    }
-    
-    .input-group {
+      padding: 16px 24px !important;
       display: flex;
-      gap: 0.5rem;
+      gap: 12px;
       align-items: flex-end;
+      background-color: white;
+      border-top: 1px solid #e0e0e0;
     }
     
-    .input-group textarea {
+    .message-input {
       flex: 1;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      padding: 0.5rem;
-      font-family: inherit;
-      font-size: 14px;
-      resize: none;
     }
     
-    .input-group textarea:focus {
-      outline: none;
-      border-color: #007bff;
+    .send-button {
+      margin-bottom: 8px;
+    }
+    
+    @keyframes messageSlide {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    /* Custom scrollbar */
+    .chat-messages::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .chat-messages::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+    
+    .chat-messages::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+    }
+    
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
     }
   `]
 })
@@ -204,10 +273,32 @@ export class ChatComponent {
   currentMessage = '';
   isLoading = false;
   isConnected = true;
+  currentModel = 'gpt-5-nano'; // Default model
   
   private apiUrl = '/v1';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    this.loadAvailableModels();
+  }
+
+  trackMessage(index: number, message: Message): string {
+    return message.timestamp.getTime().toString();
+  }
+
+  private loadAvailableModels() {
+    this.http.get<any>(`${this.apiUrl}/models`).subscribe({
+      next: (response) => {
+        if (response.data && response.data.length > 0) {
+          this.currentModel = response.data[0].id;
+        }
+        this.isConnected = true;
+      },
+      error: (error) => {
+        console.warn('Could not load models, using default:', error);
+        this.isConnected = false;
+      }
+    });
+  }
 
   sendMessage() {
     if (!this.currentMessage.trim()) return;
@@ -224,7 +315,7 @@ export class ChatComponent {
     this.isLoading = true;
     
     const chatRequest = {
-      model: 'gpt-3.5-turbo',
+      model: this.currentModel,
       messages: this.messages.map(m => ({ role: m.role, content: m.content }))
     };
     

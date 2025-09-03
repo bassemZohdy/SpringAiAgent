@@ -2,8 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(find:*)",
-      "Bash(mvn clean:*)",
-      "Bash(where mvn)",
+      "Bash(mvn:*)",
+      "Bash(mvnd:*)",
+      "Bash(where:*)",
       "Bash(java:*)",
       "Bash(gradle:*)",
       "Bash(docker build:*)",
@@ -12,7 +13,9 @@
       "Bash(chmod:*)",
       "Bash(./run-dev.sh)",
       "Bash(docker:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(./run-dev.bat)",
+      "Bash(ng add:*)"
     ],
     "deny": [],
     "ask": []

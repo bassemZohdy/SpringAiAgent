@@ -2,8 +2,7 @@ package ai.demo.springagent.base;
 
 import ai.demo.agent.base.*;
 import ai.demo.agent.base.task.Task;
-import org.springframework.ai.chat.ChatClient;
-import org.springframework.ai.chat.ChatResponse;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
@@ -21,7 +20,7 @@ import java.util.Objects;
  * @param <TASK> The type of task/input the agent processes (must extend Task)
  * @param <RESULT> The type of result/output the agent produces
  */
-public abstract class SpringAiAgent<TASK extends Task, RESULT> extends BaseAgent<TASK, RESULT> implements AiAgent<TASK, Prompt, ChatResponse, RESULT> {
+public abstract class SpringAiAgent<TASK extends Task, RESULT> extends BaseAgent<TASK, RESULT> implements AiAgent<TASK, Prompt, String, RESULT> {
 
     private final ChatClient chatClient;
 
@@ -57,15 +56,15 @@ public abstract class SpringAiAgent<TASK extends Task, RESULT> extends BaseAgent
     protected final RESULT doProcess(TASK task) throws Exception {
         // Follow the transformation pipeline: TASK → PROMPT → CHAT_RESPONSE → RESULT
         Prompt basePrompt = transformToPrompt(task);
-        ChatResponse response = call(basePrompt);
+        String response = call(basePrompt);
         return transformFromResponse(response);
     }
 
     @Override
-    public final ChatResponse call(Prompt basePrompt) {
+    public final String call(Prompt basePrompt) {
         // Enhance the prompt with context from configuration and memory
         Prompt enhancedPrompt = enhancePromptWithContext(basePrompt);
-        return chatClient.call(enhancedPrompt);
+        return chatClient.prompt(enhancedPrompt).call().content();
     }
 
     /**

@@ -46,11 +46,17 @@ if [ "$JAVA_VERSION" -lt 21 ]; then
 fi
 print_status "Java $JAVA_VERSION found"
 
-# Check Maven
-if ! mvn -version >/dev/null 2>&1; then
-    print_error "Maven is not installed or not in PATH. Please install Maven 3.9 or higher."
+# Check Maven or Maven Daemon
+MAVEN_CMD=""
+if command -v mvnd >/dev/null 2>&1; then
+    MAVEN_CMD="mvnd"
+    print_status "Maven Daemon (mvnd) found"
+elif command -v mvn >/dev/null 2>&1; then
+    MAVEN_CMD="mvn"
+    print_status "Maven (mvn) found"
+else
+    print_error "Neither Maven (mvn) nor Maven Daemon (mvnd) is installed or in PATH. Please install Maven 3.9 or higher."
 fi
-print_status "Maven found"
 
 # Check Node.js
 if ! node --version >/dev/null 2>&1; then
@@ -120,7 +126,7 @@ echo "🏗️  Building and starting services..."
 # Step 1: Build and install agent library
 print_info "Building agent library..."
 cd agent
-if ! mvn clean install -DskipTests; then
+if ! $MAVEN_CMD clean install -DskipTests; then
     print_error "Failed to build agent library"
 fi
 cd ..
@@ -142,7 +148,7 @@ cd ..
 # Step 3: Start Spring Boot application in background
 print_info "Starting Spring Boot application..."
 cd spring-ai-agent
-mvn spring-boot:run -Dspring-boot.run.profiles=dev > ../spring-boot.log 2>&1 &
+$MAVEN_CMD spring-boot:run -Dspring-boot.run.profiles=dev > ../spring-boot.log 2>&1 &
 AGENT_PID=$!
 cd ..
 

@@ -144,7 +144,6 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements Agent<TASK
         return configuration.getInstructions();
     }
     
-    @Override
     public void setInstructions(String instructions) {
         throw new UnsupportedOperationException("Instructions are immutable and set via configuration. Create a new agent with updated configuration.");
     }
@@ -426,7 +425,7 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements Agent<TASK
      * 
      * @param task the task that started
      */
-    protected void onTaskStarted(TASK task) {
+    public void onTaskStarted(TASK task) {
         // Default implementation does nothing
     }
     
@@ -437,7 +436,7 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements Agent<TASK
      * @param task the task that completed
      * @param result the result produced
      */
-    protected void onTaskCompleted(TASK task, RESULT result) {
+    public void onTaskCompleted(TASK task, RESULT result) {
         // Default implementation does nothing
     }
     
