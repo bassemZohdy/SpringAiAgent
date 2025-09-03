@@ -1,17 +1,6 @@
 version: '3.8'
 
 services:
-  # Agent Library (build stage)
-  agent-lib:
-    build:
-      context: ./agent
-      dockerfile: Dockerfile
-    container_name: agent-library
-    volumes:
-      - maven-cache:/root/.m2
-    networks:
-      - spring-ai-network
-
   # Spring AI Agent Service
   spring-ai-agent:
     build:
@@ -23,8 +12,6 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - OPENAI_API_KEY=${OPENAI_API_KEY:-your-openai-api-key-here}
-    depends_on:
-      - agent-lib
     volumes:
       - maven-cache:/root/.m2
     networks:

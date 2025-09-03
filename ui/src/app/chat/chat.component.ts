@@ -205,7 +205,7 @@ export class ChatComponent {
   isLoading = false;
   isConnected = true;
   
-  private apiUrl = '/api';
+  private apiUrl = '/v1';
 
   constructor(private http: HttpClient) {}
 

@@ -37,21 +37,40 @@ spring-ai-agent/
 - Java 21
 - Maven 3.9+
 - Node.js 18+
-- Docker & Docker Compose
+- Docker & Docker Compose (for production deployment)
 
-### Agent Library
+### Quick Development Start
+```bash
+# Linux/macOS
+./run-dev.sh
+
+# Windows
+run-dev.bat
+```
+
+The development script will:
+1. Check prerequisites
+2. Create .env from .env.example if needed
+3. Build agent library
+4. Install Angular dependencies
+5. Start Spring Boot API on port 8080
+6. Start Angular UI on port 4200 with proxy configuration
+
+### Manual Development Setup
+
+#### Agent Library
 ```bash
 cd agent
 mvn clean install
 ```
 
-### Spring AI Agent
+#### Spring AI Agent
 ```bash
 cd spring-ai-agent
-mvn spring-boot:run
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-### Angular UI
+#### Angular UI
 ```bash
 cd ui
 npm install

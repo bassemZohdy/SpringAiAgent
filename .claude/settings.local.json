@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(mvn clean:*)",
+      "Bash(where mvn)",
+      "Bash(java:*)",
+      "Bash(gradle:*)",
+      "Bash(docker build:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(chmod:*)",
+      "Bash(./run-dev.sh)",
+      "Bash(docker:*)",
+      "Bash(curl:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

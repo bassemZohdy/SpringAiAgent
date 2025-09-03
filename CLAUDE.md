@@ -11,15 +11,26 @@ A multi-module Spring Boot project for AI agents with three main components:
 
 ## Build and Development Commands
 
-### Complete Development Setup
+### Quick Development Start
+```bash
+# Linux/macOS
+./run-dev.sh
+
+# Windows  
+run-dev.bat
+```
+
+The development script automatically handles all setup steps and starts both backend and frontend.
+
+### Manual Development Setup
 ```bash
 # Build agent library first (required dependency)
 cd agent && mvn clean install
 
-# Run Spring Boot application
-cd spring-ai-agent && mvn spring-boot:run
+# Run Spring Boot application with dev profile
+cd spring-ai-agent && mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
-# Run Angular UI (separate terminal)
+# Run Angular UI with proxy (separate terminal)
 cd ui && npm install && npm start
 ```
 
@@ -75,10 +86,12 @@ Uses Spring AI version 1.0.0-M4 with OpenAI integration.
 
 ### Angular UI (`ui/`)
 Angular 17 application providing chat interface that communicates with the Spring Boot API.
+- Includes proxy configuration for local development (`proxy.conf.json`)
+- Calls `/v1` API endpoints matching Spring Boot controller
 
 ## Environment Configuration
 
-Required environment variables:
+Environment variables are configured in `.env.example` (copy to `.env` for local development):
 - `OPENAI_API_KEY`: Your OpenAI API key (required)
 - `SPRING_PROFILES_ACTIVE`: Set to `docker` for containerized deployment
 - `SERVER_PORT`: Spring Boot port (default: 8080)
