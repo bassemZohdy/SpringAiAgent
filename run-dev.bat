@@ -59,41 +59,62 @@ if errorlevel 1 (
 for /f %%i in ('node --version') do set NODE_VERSION=%%i
 echo [OK] Node.js !NODE_VERSION! found
 
-REM Check environment configuration
-if not exist .env (
-    echo [WARN] .env file not found.
-    if exist .env.example (
-        echo [INFO] Creating .env from .env.example...
-        copy .env.example .env >nul
-        echo [WARN] Please edit .env file and set your OPENAI_API_KEY
+REM Check environment configuration (prioritize .env.local for development)
+set ENV_FILE=.env.local
+if not exist .env.local (
+    echo [WARN] .env.local file not found.
+    if exist .env.local.example (
+        echo [INFO] Creating .env.local from .env.local.example...
+        copy .env.local.example .env.local >nul
+        echo [OK] Using .env.local for local development with LM Studio support
+    ) else if exist .env (
+        echo [INFO] Using existing .env file
+        set ENV_FILE=.env
+    ) else if exist .env.example (
+        echo [INFO] Creating .env.local from .env.example...
+        copy .env.example .env.local >nul
+        echo [WARN] Please edit .env.local file and set your configuration
         echo.
-        echo Example:
-        echo   OPENAI_API_KEY=sk-your-actual-key-here
+        echo For local LM Studio testing, .env.local is already configured.
+        echo For OpenAI API, set: OPENAI_API_KEY=sk-your-actual-key-here
         echo.
         pause
     ) else (
-        echo [ERROR] .env.example file not found. Cannot create environment configuration.
+        echo [ERROR] No environment configuration files found. Cannot create environment configuration.
+        pause
+        exit /b 1
+    )
+) else (
+    echo [OK] Using .env.local for development
+)
+
+REM Check configuration based on environment
+findstr /C:"OPENAI_API_KEY=your-openai-api-key-here" %ENV_FILE% >nul
+if not errorlevel 1 (
+    echo [ERROR] OPENAI_API_KEY is not set in %ENV_FILE% file. Please set your OpenAI API key.
+    pause
+    exit /b 1
+)
+
+findstr /C:"OPENAI_API_KEY=lm-studio" %ENV_FILE% >nul
+if not errorlevel 1 (
+    echo [INFO] Using LM Studio configuration for local development
+    findstr /C:"OPENAI_BASE_URL=http://localhost:1234/v1" %ENV_FILE% >nul
+    if errorlevel 1 (
+        echo [ERROR] LM Studio base URL not configured. Expected: http://localhost:1234/v1
+        pause
+        exit /b 1
+    )
+) else (
+    findstr /C:"OPENAI_API_KEY=" %ENV_FILE% >nul
+    if errorlevel 1 (
+        echo [ERROR] OPENAI_API_KEY is not found in %ENV_FILE% file. Please set your OpenAI API key or use LM Studio configuration.
         pause
         exit /b 1
     )
 )
 
-REM Check if OPENAI_API_KEY is set
-findstr /C:"OPENAI_API_KEY=your-openai-api-key-here" .env >nul
-if not errorlevel 1 (
-    echo [ERROR] OPENAI_API_KEY is not set in .env file. Please set your OpenAI API key.
-    pause
-    exit /b 1
-)
-
-findstr /C:"OPENAI_API_KEY=" .env >nul
-if errorlevel 1 (
-    echo [ERROR] OPENAI_API_KEY is not found in .env file. Please set your OpenAI API key.
-    pause
-    exit /b 1
-)
-
-echo [OK] Environment configuration loaded
+echo [OK] Environment configuration validated from %ENV_FILE%
 echo.
 
 echo [BUILD] Building and starting services...

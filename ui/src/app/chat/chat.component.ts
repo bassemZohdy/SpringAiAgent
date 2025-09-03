@@ -46,13 +46,10 @@ interface Message {
           Chat with AI Agent
         </mat-card-title>
         <div class="header-actions">
-          <mat-form-field appearance="outline" class="provider-select">
-            <mat-label>Provider</mat-label>
-            <mat-select [(value)]="selectedProvider">
-              <mat-option value="openai">OpenAI</mat-option>
-              <mat-option value="anthropic">Anthropic</mat-option>
-            </mat-select>
-          </mat-form-field>
+          <mat-chip class="provider-chip">
+            <mat-icon>smart_toy</mat-icon>
+            OpenAI
+          </mat-chip>
           <mat-chip [class.connected]="isConnected" [class.disconnected]="!isConnected">
             <mat-icon>{{ isConnected ? 'wifi' : 'wifi_off' }}</mat-icon>
             {{ isConnected ? 'Connected' : 'Disconnected' }}
@@ -143,8 +140,12 @@ interface Message {
       gap: 16px;
     }
     
-    .provider-select {
-      width: 120px;
+    .provider-chip {
+      background-color: #1976d2;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     
     .header-actions mat-chip {
@@ -309,7 +310,6 @@ export class ChatComponent implements OnInit, OnChanges {
   isConnected = true;
   currentModel = 'gpt-3.5-turbo';
   streamEnabled = false;
-  selectedProvider = 'openai';
   
   private apiUrl = '/v1';
 
@@ -414,7 +414,7 @@ export class ChatComponent implements OnInit, OnChanges {
     
     this.chatService.createCompletion(chatRequest, { 
       stream: this.streamEnabled,
-      provider: this.selectedProvider
+      provider: 'openai'
     }).subscribe({
       next: (response) => {
         const assistantMessage: Message = {

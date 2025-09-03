@@ -69,33 +69,51 @@ if [ "$NODE_VERSION" -lt 18 ]; then
 fi
 print_status "Node.js v$(node --version | cut -d'v' -f2) found"
 
-# Check environment configuration
-if [ ! -f .env ]; then
-    print_warning ".env file not found."
-    if [ -f .env.example ]; then
-        print_info "Creating .env from .env.example..."
-        cp .env.example .env
-        print_warning "Please edit .env file and set your OPENAI_API_KEY"
+# Check environment configuration (prioritize .env.local for development)
+ENV_FILE=".env.local"
+if [ ! -f .env.local ]; then
+    print_warning ".env.local file not found."
+    if [ -f .env.local.example ]; then
+        print_info "Creating .env.local from .env.local.example..."
+        cp .env.local.example .env.local
+        print_status "Using .env.local for local development with LM Studio support"
+    elif [ -f .env ]; then
+        print_info "Using existing .env file"
+        ENV_FILE=".env"
+    elif [ -f .env.example ]; then
+        print_info "Creating .env.local from .env.example..."
+        cp .env.example .env.local
+        print_warning "Please edit .env.local file and set your configuration"
         echo ""
-        echo "Example:"
-        echo "  OPENAI_API_KEY=sk-your-actual-key-here"
+        echo "For local LM Studio testing, .env.local is already configured."
+        echo "For OpenAI API, set: OPENAI_API_KEY=sk-your-actual-key-here"
         echo ""
-        read -p "Press Enter after setting your API key in .env file..."
+        read -p "Press Enter after reviewing .env.local configuration..."
     else
-        print_error ".env.example file not found. Cannot create environment configuration."
+        print_error "No environment configuration files found. Cannot create environment configuration."
+    fi
+else
+    print_status "Using .env.local for development"
+fi
+
+# Source environment variables from the selected file
+if [ -f "$ENV_FILE" ]; then
+    export $(cat "$ENV_FILE" | grep -v '^#' | xargs)
+    print_info "Environment loaded from $ENV_FILE"
+fi
+
+# Check configuration based on environment
+if [ -z "$OPENAI_API_KEY" ] || [ "$OPENAI_API_KEY" = "your-openai-api-key-here" ]; then
+    if [ "$OPENAI_API_KEY" = "lm-studio" ]; then
+        print_info "Using LM Studio configuration for local development"
+        if [ -z "$OPENAI_BASE_URL" ] || [ "$OPENAI_BASE_URL" = "https://api.openai.com" ]; then
+            print_error "LM Studio base URL not configured. Expected: http://localhost:1234/v1"
+        fi
+    else
+        print_error "OPENAI_API_KEY is not set in $ENV_FILE file. Please set your OpenAI API key or use LM Studio configuration."
     fi
 fi
-
-# Source environment variables
-if [ -f .env ]; then
-    export $(cat .env | grep -v '^#' | xargs)
-fi
-
-# Check if OPENAI_API_KEY is set
-if [ -z "$OPENAI_API_KEY" ] || [ "$OPENAI_API_KEY" = "your-openai-api-key-here" ]; then
-    print_error "OPENAI_API_KEY is not set in .env file. Please set your OpenAI API key."
-fi
-print_status "Environment configuration loaded"
+print_status "Environment configuration validated"
 
 # Function to cleanup background processes
 cleanup() {

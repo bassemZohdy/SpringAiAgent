@@ -7,8 +7,9 @@ import ai.demo.springagent.config.AiModelConfiguration;
 import ai.demo.springagent.model.ThreadMessage;
 import ai.demo.springagent.provider.LLMProvider;
 import ai.demo.springagent.provider.OpenAIProvider;
-import ai.demo.springagent.provider.AnthropicProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -24,75 +25,85 @@ import java.util.stream.Collectors;
 @Service
 public class ChatService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ChatService.class);
+    
     private final ChatClient chatClient;
     private final AiModelConfiguration aiModelConfig;
     private final ThreadService threadService;
     private final OpenAIProvider openAIProvider;
-    private final AnthropicProvider anthropicProvider;
 
     public ChatService(ChatClient chatClient, AiModelConfiguration aiModelConfig, ThreadService threadService,
-                      OpenAIProvider openAIProvider, AnthropicProvider anthropicProvider) {
+                      OpenAIProvider openAIProvider) {
         this.chatClient = chatClient;
         this.aiModelConfig = aiModelConfig;
         this.threadService = threadService;
         this.openAIProvider = openAIProvider;
-        this.anthropicProvider = anthropicProvider;
     }
 
     public ChatResponse processChat(ChatRequest request, String provider) {
+        logger.debug("Processing chat request - provider: {}, model: {}, threadId: {}", 
+                    provider, request.getModel(), request.getThreadId());
+        
+        long startTime = System.currentTimeMillis();
         ChatRequest processedRequest = processThreadHistory(request);
         LLMProvider llmProvider = getProvider(provider);
         
-        try {
-            ChatResponse response = llmProvider.complete(processedRequest).block();
-            saveAssistantResponse(request.getThreadId(), response);
-            return response;
-        } catch (Exception e) {
-            throw new RuntimeException("Error processing chat: " + e.getMessage(), e);
-        }
+        ChatResponse response = llmProvider.complete(processedRequest).block();
+        saveAssistantResponse(request.getThreadId(), response);
+        
+        long duration = System.currentTimeMillis() - startTime;
+        logger.info("Chat completion successful - provider: {}, model: {}, duration: {}ms", 
+                   provider, request.getModel(), duration);
+        
+        return response;
     }
     
     @Async
     public void streamChatAsync(ChatRequest request, String provider, SseEmitter emitter) {
+        logger.debug("Starting streaming chat - provider: {}, model: {}, threadId: {}", 
+                    provider, request.getModel(), request.getThreadId());
+        
+        long startTime = System.currentTimeMillis();
         ChatRequest processedRequest = processThreadHistory(request);
         LLMProvider llmProvider = getProvider(provider);
         
         StringBuilder fullResponse = new StringBuilder();
         ObjectMapper objectMapper = new ObjectMapper();
         
-        try {
-            llmProvider.stream(processedRequest)
-                    .doOnNext(chunk -> {
-                        try {
-                            String data = "data: " + objectMapper.writeValueAsString(chunk) + "\n\n";
-                            emitter.send(data);
-                            
-                            if (chunk.getChoices() != null && !chunk.getChoices().isEmpty() &&
-                                chunk.getChoices().get(0).getDelta() != null &&
-                                chunk.getChoices().get(0).getDelta().getContent() != null) {
-                                fullResponse.append(chunk.getChoices().get(0).getDelta().getContent());
-                            }
-                        } catch (IOException e) {
-                            emitter.completeWithError(e);
+        llmProvider.stream(processedRequest)
+                .doOnNext(chunk -> {
+                    try {
+                        String data = "data: " + objectMapper.writeValueAsString(chunk) + "\n\n";
+                        emitter.send(data);
+                        
+                        if (chunk.getChoices() != null && !chunk.getChoices().isEmpty() &&
+                            chunk.getChoices().get(0).getDelta() != null &&
+                            chunk.getChoices().get(0).getDelta().getContent() != null) {
+                            fullResponse.append(chunk.getChoices().get(0).getDelta().getContent());
                         }
-                    })
-                    .doOnComplete(() -> {
-                        try {
-                            emitter.send("data: [DONE]\n\n");
-                            emitter.complete();
-                            
-                            if (request.getThreadId() != null && fullResponse.length() > 0) {
-                                saveAssistantMessage(request.getThreadId(), fullResponse.toString());
-                            }
-                        } catch (IOException e) {
-                            emitter.completeWithError(e);
+                    } catch (IOException e) {
+                        emitter.completeWithError(e);
+                    }
+                })
+                .doOnComplete(() -> {
+                    try {
+                        emitter.send("data: [DONE]\n\n");
+                        emitter.complete();
+                        
+                        if (request.getThreadId() != null && fullResponse.length() > 0) {
+                            saveAssistantMessage(request.getThreadId(), fullResponse.toString());
                         }
-                    })
-                    .doOnError(emitter::completeWithError)
-                    .subscribe();
-        } catch (Exception e) {
-            emitter.completeWithError(e);
-        }
+                        
+                        long duration = System.currentTimeMillis() - startTime;
+                        logger.info("Streaming chat completed - provider: {}, model: {}, duration: {}ms, chars: {}", 
+                                   provider, request.getModel(), duration, fullResponse.length());
+                    } catch (IOException e) {
+                        logger.error("Error completing streaming chat", e);
+                        emitter.completeWithError(e);
+                    }
+                })
+                .doOnError(emitter::completeWithError)
+                .subscribe();
     }
     
     private ChatRequest processThreadHistory(ChatRequest request) {
@@ -130,7 +141,7 @@ public class ChatService {
     }
     
     private LLMProvider getProvider(String provider) {
-        return "anthropic".equalsIgnoreCase(provider) ? anthropicProvider : openAIProvider;
+        return openAIProvider;
     }
     
     private void saveAssistantResponse(String threadId, ChatResponse response) {

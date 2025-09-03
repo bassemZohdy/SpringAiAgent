@@ -5,7 +5,7 @@ A multi-module project providing unified OpenAI-compatible chat completions API 
 ## 🚀 Features
 
 - **Unified API**: Single `/v1/chat/completions` endpoint for streaming and non-streaming
-- **Multi-Provider**: Support for OpenAI and Anthropic with easy provider switching
+- **OpenAI Integration**: Full OpenAI API compatibility with gpt-3.5-turbo and gpt-4 models
 - **Streaming Support**: Real-time Server-Sent Events (SSE) streaming
 - **Thread Management**: OpenAI Assistants API-compatible conversation threads
 - **Modern UI**: Angular Material Design interface with streaming toggle
@@ -92,7 +92,7 @@ npm start
 ### Chat Completions
 - `POST /v1/chat/completions` - Unified chat completions (streaming/non-streaming)
   - Query params: `stream=true/false`
-  - Headers: `X-LLM-Provider: openai|anthropic`
+  - Headers: `X-LLM-Provider: openai`
 
 ### Thread Management
 - `POST /v1/threads` - Create conversation thread
@@ -130,7 +130,6 @@ docker-compose up -d --scale spring-ai-agent=2
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `OPENAI_API_KEY` | OpenAI API key | Required for OpenAI provider |
-| `ANTHROPIC_API_KEY` | Anthropic API key | Required for Anthropic provider |
 | `SPRING_PROFILES_ACTIVE` | Spring profiles | `docker` |
 | `SERVER_PORT` | Spring Boot port | `8080` |
 | `UI_PORT` | Angular UI port | `4200` |
@@ -148,8 +147,8 @@ curl -s http://localhost:8080/v1/chat/completions \
 curl -N http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Accept: text/event-stream" \
-  -H "X-LLM-Provider: anthropic" \
-  -d '{"model":"claude-3-haiku","messages":[{"role":"user","content":"Tell me a story"}],"stream":true}'
+  -H "X-LLM-Provider: openai" \
+  -d '{"model":"gpt-3.5-turbo","messages":[{"role":"user","content":"Tell me a story"}],"stream":true}'
 ```
 
 ## 🏗️ Architecture
@@ -158,7 +157,6 @@ curl -N http://localhost:8080/v1/chat/completions \
 - **Agent Library**: Core interfaces and implementations for Agent/AIAgent
 - **Provider System**: Pluggable LLM provider architecture
   - OpenAI Provider (via Spring AI ChatClient)
-  - Anthropic Provider (via WebClient to Claude API)
 - **Thread Storage**: In-memory conversation management
 - **Streaming Engine**: SSE-based real-time response streaming
 
@@ -166,7 +164,7 @@ curl -N http://localhost:8080/v1/chat/completions \
 - **Chat Service**: Unified service supporting streaming and non-streaming
 - **Material UI**: Modern, responsive chat interface
 - **Real-time Streaming**: EventSource and fetch-based streaming
-- **Provider Selection**: Dynamic LLM provider switching
+- **OpenAI Compatible**: Full compatibility with OpenAI Chat Completions API
 
 ### Deployment
 - **Docker**: Multi-stage containerized builds

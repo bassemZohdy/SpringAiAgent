@@ -1,11 +1,11 @@
-# Spring AI Agent - Unified OpenAI-Compatible API
+# Spring AI Agent - OpenAI-Compatible API
 
-This document describes the unified API endpoints that provide OpenAI-compatible chat completions with streaming support and multiple LLM provider selection.
+This document describes the unified API endpoints that provide OpenAI-compatible chat completions with streaming support.
 
 ## Features
 
 - **Unified Endpoint**: Single `/v1/chat/completions` endpoint for both streaming and non-streaming requests
-- **Provider Selection**: Support for multiple LLM providers via `X-LLM-Provider` header
+- **OpenAI Integration**: Full OpenAI API compatibility with gpt-3.5-turbo and gpt-4 models
 - **Thread Support**: In-memory conversation threads following OpenAI Assistants API format
 - **Streaming**: Server-Sent Events (SSE) streaming support
 - **OpenAI Compatibility**: Request/response format matches OpenAI Chat Completions API
@@ -18,7 +18,7 @@ This document describes the unified API endpoints that provide OpenAI-compatible
 
 **Headers**:
 - `Content-Type: application/json`
-- `X-LLM-Provider: openai|anthropic` (optional, defaults to `openai`)
+- `X-LLM-Provider: openai`
 
 **Request Body**:
 ```json
@@ -126,21 +126,6 @@ data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","created":1699000
 data: [DONE]
 ```
 
-### 3. Anthropic Provider
-
-```bash
-curl -s http://localhost:8080/v1/chat/completions \\
-  -H "Content-Type: application/json" \\
-  -H "X-LLM-Provider: anthropic" \\
-  -d '{
-    "model": "claude-3-haiku-20240307",
-    "messages": [
-      {"role": "user", "content": "What are the benefits of renewable energy?"}
-    ],
-    "temperature": 0.6,
-    "max_tokens": 400
-  }'
-```
 
 ### 4. Chat with Thread Context
 
@@ -187,7 +172,7 @@ curl -N http://localhost:8080/v1/chat/completions \\
 
 The Angular frontend provides:
 
-- **Provider Selection**: Dropdown to choose between OpenAI and Anthropic
+- **OpenAI Provider**: Integrated with OpenAI Chat Completions API
 - **Streaming Toggle**: Enable/disable real-time response streaming
 - **Thread Management**: Automatic thread creation and message history
 - **Real-time Responses**: Live streaming of AI responses with proper formatting
@@ -197,14 +182,11 @@ The Angular frontend provides:
 ### Environment Variables
 
 - `OPENAI_API_KEY`: Your OpenAI API key (required for OpenAI provider)
-- `ANTHROPIC_API_KEY`: Your Anthropic API key (required for Anthropic provider)
 - `SERVER_PORT`: Spring Boot server port (default: 8080)
 
 ### Provider Configuration
 
-The system automatically selects the appropriate provider based on the `X-LLM-Provider` header:
-- `openai` (default): Uses Spring AI with OpenAI ChatClient
-- `anthropic`: Uses WebClient to call Anthropic Claude Messages API
+The system uses OpenAI as the LLM provider via Spring AI ChatClient integration.
 
 ## Error Handling
 
