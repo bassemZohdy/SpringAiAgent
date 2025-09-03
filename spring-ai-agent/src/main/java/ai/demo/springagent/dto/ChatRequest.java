@@ -10,6 +10,7 @@ public class ChatRequest {
     @NotEmpty
     private List<Message> messages;
     
+    private String threadId;
     private Double temperature = 0.7;
     private Integer maxTokens;
     private boolean stream = false;
@@ -35,6 +36,8 @@ public class ChatRequest {
     public void setModel(String model) { this.model = model; }
     public List<Message> getMessages() { return messages; }
     public void setMessages(List<Message> messages) { this.messages = messages; }
+    public String getThreadId() { return threadId; }
+    public void setThreadId(String threadId) { this.threadId = threadId; }
     public Double getTemperature() { return temperature; }
     public void setTemperature(Double temperature) { this.temperature = temperature; }
     public Integer getMaxTokens() { return maxTokens; }

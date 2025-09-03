@@ -104,3 +104,23 @@ Environment variables are configured in `.env.example` (copy to `.env` for local
 - Spring AI milestone repository is configured for accessing Spring AI dependencies
 - Multi-stage Docker builds optimize container sizes
 - Health checks are configured for both backend and frontend services
+- Async processing enabled with `@EnableAsync` for streaming support
+- Provider implementations use Reactive patterns (Mono/Flux) with blocking adapters for Spring MVC
+- Angular Material components integrated for modern UI experience
+
+## API Compatibility
+
+The implementation maintains full compatibility with:
+- OpenAI Chat Completions API specification
+- OpenAI Assistants API (threads and messages)
+- Server-Sent Events (SSE) streaming standard
+- Angular HTTP client and streaming APIs
+
+## Task Management
+
+Refer to `TODO.md` for current project tasks, roadmap, and issue tracking. This file is actively maintained and should be consulted for:
+- Current implementation status
+- Pending tasks and priorities
+- Known issues and technical debt
+- Future enhancement plans
+- Task assignment format for new work

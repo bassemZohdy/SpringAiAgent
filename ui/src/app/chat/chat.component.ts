@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -9,7 +9,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSelectModule } from '@angular/material/select';
 import { TextFieldModule } from '@angular/cdk/text-field';
+import { ThreadService, Thread, ThreadMessage } from '../services/thread.service';
+import { ChatService, ChatMessage, ChatRequest } from '../services/chat.service';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -30,6 +34,8 @@ interface Message {
     MatIconModule,
     MatChipsModule,
     MatProgressSpinnerModule,
+    MatSlideToggleModule,
+    MatSelectModule,
     TextFieldModule
   ],
   template: `
@@ -40,6 +46,13 @@ interface Message {
           Chat with AI Agent
         </mat-card-title>
         <div class="header-actions">
+          <mat-form-field appearance="outline" class="provider-select">
+            <mat-label>Provider</mat-label>
+            <mat-select [(value)]="selectedProvider">
+              <mat-option value="openai">OpenAI</mat-option>
+              <mat-option value="anthropic">Anthropic</mat-option>
+            </mat-select>
+          </mat-form-field>
           <mat-chip [class.connected]="isConnected" [class.disconnected]="!isConnected">
             <mat-icon>{{ isConnected ? 'wifi' : 'wifi_off' }}</mat-icon>
             {{ isConnected ? 'Connected' : 'Disconnected' }}
@@ -69,28 +82,35 @@ interface Message {
       </mat-card-content>
       
       <mat-card-actions class="chat-input">
-        <mat-form-field appearance="outline" class="message-input">
-          <mat-label>Type your message...</mat-label>
-          <textarea 
-            matInput
-            [(ngModel)]="currentMessage"
-            (keydown)="onKeyDown($event)"
-            [disabled]="isLoading"
-            rows="3"
-            cdkTextareaAutosize
-            #autosize="cdkTextareaAutosize"
-            cdkAutosizeMinRows="1"
-            cdkAutosizeMaxRows="4"></textarea>
-          <mat-icon matSuffix *ngIf="currentMessage.trim()">edit</mat-icon>
-        </mat-form-field>
-        <button 
-          mat-fab
-          color="primary"
-          (click)="sendMessage()"
-          [disabled]="!currentMessage.trim() || isLoading"
-          class="send-button">
-          <mat-icon>{{ isLoading ? 'hourglass_empty' : 'send' }}</mat-icon>
-        </button>
+        <div class="input-controls">
+          <mat-slide-toggle [(ngModel)]="streamEnabled" color="primary">
+            Stream responses
+          </mat-slide-toggle>
+        </div>
+        <div class="input-row">
+          <mat-form-field appearance="outline" class="message-input">
+            <mat-label>Type your message...</mat-label>
+            <textarea 
+              matInput
+              [(ngModel)]="currentMessage"
+              (keydown)="onKeyDown($event)"
+              [disabled]="isLoading"
+              rows="3"
+              cdkTextareaAutosize
+              #autosize="cdkTextareaAutosize"
+              cdkAutosizeMinRows="1"
+              cdkAutosizeMaxRows="4"></textarea>
+            <mat-icon matSuffix *ngIf="currentMessage.trim()">edit</mat-icon>
+          </mat-form-field>
+          <button 
+            mat-fab
+            color="primary"
+            (click)="sendMessage()"
+            [disabled]="!currentMessage.trim() || isLoading"
+            class="send-button">
+            <mat-icon>{{ isLoading ? 'hourglass_empty' : 'send' }}</mat-icon>
+          </button>
+        </div>
       </mat-card-actions>
     </mat-card>
   `,
@@ -120,6 +140,11 @@ interface Message {
     .header-actions {
       display: flex;
       align-items: center;
+      gap: 16px;
+    }
+    
+    .provider-select {
+      width: 120px;
     }
     
     .header-actions mat-chip {
@@ -222,11 +247,18 @@ interface Message {
     
     .chat-input {
       padding: 16px 24px !important;
+      background-color: white;
+      border-top: 1px solid #e0e0e0;
+    }
+    
+    .input-controls {
+      margin-bottom: 12px;
+    }
+    
+    .input-row {
       display: flex;
       gap: 12px;
       align-items: flex-end;
-      background-color: white;
-      border-top: 1px solid #e0e0e0;
     }
     
     .message-input {
@@ -268,17 +300,33 @@ interface Message {
     }
   `]
 })
-export class ChatComponent {
+export class ChatComponent implements OnInit, OnChanges {
+  @Input() selectedThread: Thread | null = null;
+  
   messages: Message[] = [];
   currentMessage = '';
   isLoading = false;
   isConnected = true;
-  currentModel = 'gpt-5-nano'; // Default model
+  currentModel = 'gpt-3.5-turbo';
+  streamEnabled = false;
+  selectedProvider = 'openai';
   
   private apiUrl = '/v1';
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private threadService: ThreadService, private chatService: ChatService) {}
+
+  ngOnInit() {
     this.loadAvailableModels();
+    this.threadService.currentThread$.subscribe(thread => {
+      this.selectedThread = thread;
+      this.loadThreadMessages();
+    });
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['selectedThread']) {
+      this.loadThreadMessages();
+    }
   }
 
   trackMessage(index: number, message: Message): string {
@@ -300,7 +348,49 @@ export class ChatComponent {
     });
   }
 
+  private loadThreadMessages() {
+    if (this.selectedThread) {
+      this.threadService.getThreadMessages(this.selectedThread.id).subscribe({
+        next: (threadMessages) => {
+          this.messages = threadMessages.map(tm => ({
+            role: tm.role,
+            content: tm.content,
+            timestamp: new Date(tm.created_at * 1000)
+          }));
+          this.scrollToBottom();
+        },
+        error: (error) => {
+          console.error('Error loading thread messages:', error);
+          this.messages = [];
+        }
+      });
+    } else {
+      this.messages = [];
+    }
+  }
+
   sendMessage() {
+    if (!this.currentMessage.trim()) return;
+    
+    // If no thread is selected, create a new one first
+    if (!this.selectedThread) {
+      this.threadService.createThread({ title: 'New Chat' }).subscribe({
+        next: (newThread) => {
+          this.threadService.setCurrentThread(newThread);
+          this.selectedThread = newThread;
+          this.doSendMessage();
+        },
+        error: (error) => {
+          console.error('Error creating thread:', error);
+          this.isConnected = false;
+        }
+      });
+    } else {
+      this.doSendMessage();
+    }
+  }
+
+  private doSendMessage() {
     if (!this.currentMessage.trim()) return;
     
     const userMessage: Message = {
@@ -314,12 +404,18 @@ export class ChatComponent {
     this.currentMessage = '';
     this.isLoading = true;
     
-    const chatRequest = {
+    const chatMessages: ChatMessage[] = [{ role: 'user', content: messageToSend }];
+    
+    const chatRequest: ChatRequest = {
       model: this.currentModel,
-      messages: this.messages.map(m => ({ role: m.role, content: m.content }))
+      messages: chatMessages,
+      thread_id: this.selectedThread?.id
     };
     
-    this.http.post<any>(`${this.apiUrl}/chat/completions`, chatRequest).subscribe({
+    this.chatService.createCompletion(chatRequest, { 
+      stream: this.streamEnabled,
+      provider: this.selectedProvider
+    }).subscribe({
       next: (response) => {
         const assistantMessage: Message = {
           role: 'assistant',

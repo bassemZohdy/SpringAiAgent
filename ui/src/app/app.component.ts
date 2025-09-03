@@ -3,11 +3,15 @@ import { RouterOutlet } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialogModule } from '@angular/material/dialog';
+import { ThreadListComponent } from './threads/thread-list.component';
+import { ChatComponent } from './chat/chat.component';
+import { Thread } from './services/thread.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, MatToolbarModule, MatIconModule, MatButtonModule],
+  imports: [RouterOutlet, MatToolbarModule, MatIconModule, MatButtonModule, MatDialogModule, ThreadListComponent, ChatComponent],
   template: `
     <div class="app-container">
       <mat-toolbar color="primary" class="app-toolbar">
@@ -19,6 +23,14 @@ import { MatButtonModule } from '@angular/material/button';
         </button>
       </mat-toolbar>
       <main class="app-content">
+        <div class="chat-layout">
+          <div class="thread-sidebar">
+            <app-thread-list (threadSelected)="onThreadSelected($event)"></app-thread-list>
+          </div>
+          <div class="chat-main">
+            <app-chat [selectedThread]="selectedThread"></app-chat>
+          </div>
+        </div>
         <router-outlet></router-outlet>
       </main>
     </div>
@@ -54,12 +66,38 @@ import { MatButtonModule } from '@angular/material/button';
     .app-content {
       flex: 1;
       overflow: hidden;
-      padding: 24px;
       display: flex;
       flex-direction: column;
+    }
+    
+    .chat-layout {
+      flex: 1;
+      display: flex;
+      gap: 0;
+      overflow: hidden;
+    }
+    
+    .thread-sidebar {
+      width: 320px;
+      min-width: 320px;
+      border-right: 1px solid #e0e0e0;
+      background-color: white;
+    }
+    
+    .chat-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      overflow: hidden;
     }
   `]
 })
 export class AppComponent {
   title = 'Spring AI Agent Chat';
+  selectedThread: Thread | null = null;
+
+  onThreadSelected(thread: Thread) {
+    this.selectedThread = thread;
+  }
 }

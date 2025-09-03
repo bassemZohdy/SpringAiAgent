@@ -1,6 +1,15 @@
 # Spring AI Agent Project
 
-A multi-module project with Agent library, Spring AI implementation, and Angular UI for chat functionality.
+A multi-module project providing unified OpenAI-compatible chat completions API with streaming support, multiple LLM providers, and modern Angular UI.
+
+## 🚀 Features
+
+- **Unified API**: Single `/v1/chat/completions` endpoint for streaming and non-streaming
+- **Multi-Provider**: Support for OpenAI and Anthropic with easy provider switching
+- **Streaming Support**: Real-time Server-Sent Events (SSE) streaming
+- **Thread Management**: OpenAI Assistants API-compatible conversation threads
+- **Modern UI**: Angular Material Design interface with streaming toggle
+- **OpenAI Compatible**: Drop-in replacement for OpenAI Chat Completions API
 
 ## Project Structure
 
@@ -27,9 +36,10 @@ spring-ai-agent/
    ```
 
 3. **Access the application**:
-   - **Chat UI**: http://localhost:4200
-   - **API**: http://localhost:8080/v1
+   - **Chat UI**: http://localhost:4200 (with streaming toggle and provider selection)
+   - **API**: http://localhost:8080/v1 (OpenAI-compatible endpoints)
    - **Health Check**: http://localhost:8080/actuator/health
+   - **API Docs**: See [API_USAGE.md](./API_USAGE.md)
 
 ## Development Setup
 
@@ -77,9 +87,20 @@ npm install
 npm start
 ```
 
-## API Endpoints
+## 🔌 API Endpoints
 
-- `POST /v1/chat/completions` - Chat completions (OpenAI-compatible)
+### Chat Completions
+- `POST /v1/chat/completions` - Unified chat completions (streaming/non-streaming)
+  - Query params: `stream=true/false`
+  - Headers: `X-LLM-Provider: openai|anthropic`
+
+### Thread Management
+- `POST /v1/threads` - Create conversation thread
+- `GET /v1/threads/{id}` - Get thread details
+- `GET /v1/threads/{id}/messages` - List thread messages  
+- `POST /v1/threads/{id}/messages` - Add message to thread
+
+### System
 - `GET /v1/models` - Available models
 - `GET /actuator/health` - Health check
 
@@ -102,18 +123,62 @@ docker-compose up --build -d
 docker-compose up -d --scale spring-ai-agent=2
 ```
 
-## Environment Variables
+## 🔧 Configuration
+
+### Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `OPENAI_API_KEY` | OpenAI API key | Required |
+| `OPENAI_API_KEY` | OpenAI API key | Required for OpenAI provider |
+| `ANTHROPIC_API_KEY` | Anthropic API key | Required for Anthropic provider |
 | `SPRING_PROFILES_ACTIVE` | Spring profiles | `docker` |
 | `SERVER_PORT` | Spring Boot port | `8080` |
 | `UI_PORT` | Angular UI port | `4200` |
 
-## Architecture
+### API Usage Examples
 
+```bash
+# Non-streaming chat
+curl -s http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "X-LLM-Provider: openai" \
+  -d '{"model":"gpt-3.5-turbo","messages":[{"role":"user","content":"Hello!"}]}'
+
+# Streaming chat
+curl -N http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Accept: text/event-stream" \
+  -H "X-LLM-Provider: anthropic" \
+  -d '{"model":"claude-3-haiku","messages":[{"role":"user","content":"Tell me a story"}],"stream":true}'
+```
+
+## 🏗️ Architecture
+
+### Backend (Spring Boot)
 - **Agent Library**: Core interfaces and implementations for Agent/AIAgent
-- **Spring AI Agent**: REST API server with OpenAI-compatible endpoints
-- **Angular UI**: Modern chat interface with real-time messaging
-- **Docker**: Containerized deployment with multi-stage builds
+- **Provider System**: Pluggable LLM provider architecture
+  - OpenAI Provider (via Spring AI ChatClient)
+  - Anthropic Provider (via WebClient to Claude API)
+- **Thread Storage**: In-memory conversation management
+- **Streaming Engine**: SSE-based real-time response streaming
+
+### Frontend (Angular)
+- **Chat Service**: Unified service supporting streaming and non-streaming
+- **Material UI**: Modern, responsive chat interface
+- **Real-time Streaming**: EventSource and fetch-based streaming
+- **Provider Selection**: Dynamic LLM provider switching
+
+### Deployment
+- **Docker**: Multi-stage containerized builds
+- **Development**: Hot-reload development environment
+- **Production**: Optimized production containers
+
+## 📖 Documentation
+
+- [API Usage Guide](./API_USAGE.md) - Comprehensive API documentation with examples
+- [TODO List](./TODO.md) - Project roadmap and task tracking
+- [CLAUDE.md](./CLAUDE.md) - Development setup and build instructions
+
+## 🤝 Contributing
+
+Refer to [TODO.md](./TODO.md) for current tasks and roadmap. New tasks can be assigned using the standard format provided in the TODO file.
