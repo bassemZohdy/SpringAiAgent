@@ -14,10 +14,10 @@ A multi-module Spring Boot project for AI agents with three main components:
 ### Quick Development Start
 ```bash
 # Linux/macOS
-./run-dev.sh
+./scripts/run-dev.sh
 
 # Windows  
-run-dev.bat
+scripts\run-dev.bat
 ```
 
 The development script automatically handles all setup steps and starts both backend and frontend.

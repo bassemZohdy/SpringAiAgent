@@ -29,14 +29,20 @@ public class ChatController {
     @PostMapping("/chat/completions")
     public ResponseEntity<?> chatCompletions(
             @Valid @RequestBody ChatRequest request,
-            @RequestHeader(value = "X-LLM-Provider", defaultValue = "openai") String provider) {
+            @RequestHeader(value = "X-LLM-Provider", defaultValue = "openai") String provider,
+            @RequestHeader(value = "X-Use-Memory-Advisor", defaultValue = "false") boolean useMemoryAdvisor) {
         
         if (request.isStream()) {
             SseEmitter emitter = new SseEmitter();
             chatService.streamChatAsync(request, provider, emitter);
             return ResponseEntity.ok().contentType(MediaType.TEXT_EVENT_STREAM).body(emitter);
         } else {
-            ChatResponse response = chatService.processChat(request, provider);
+            ChatResponse response;
+            if (useMemoryAdvisor) {
+                response = chatService.processChatWithMemoryAdvisor(request, provider);
+            } else {
+                response = chatService.processChat(request, provider);
+            }
             return ResponseEntity.ok(response);
         }
     }
@@ -44,5 +50,10 @@ public class ChatController {
     @GetMapping("/models")
     public ResponseEntity<?> getModels() {
         return ResponseEntity.ok(chatService.getAvailableModels());
+    }
+
+    @GetMapping("/sessions/stats")
+    public ResponseEntity<?> getSessionStats() {
+        return ResponseEntity.ok(chatService.getSessionStatistics());
     }
 }

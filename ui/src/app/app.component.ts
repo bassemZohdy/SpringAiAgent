@@ -5,13 +5,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { ThreadListComponent } from './threads/thread-list.component';
-import { ChatComponent } from './chat/chat.component';
+import { EnhancedChatComponent } from './chat/enhanced-chat.component';
 import { Thread } from './services/thread.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, MatToolbarModule, MatIconModule, MatButtonModule, MatDialogModule, ThreadListComponent, ChatComponent],
+  imports: [RouterOutlet, MatToolbarModule, MatIconModule, MatButtonModule, MatDialogModule, ThreadListComponent, EnhancedChatComponent],
   template: `
     <div class="app-container">
       <mat-toolbar color="primary" class="app-toolbar">
@@ -28,7 +28,7 @@ import { Thread } from './services/thread.service';
             <app-thread-list (threadSelected)="onThreadSelected($event)"></app-thread-list>
           </div>
           <div class="chat-main">
-            <app-chat [selectedThread]="selectedThread"></app-chat>
+            <app-enhanced-chat [selectedThread]="selectedThread"></app-enhanced-chat>
           </div>
         </div>
         <router-outlet></router-outlet>

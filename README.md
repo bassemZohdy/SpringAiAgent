@@ -52,10 +52,10 @@ spring-ai-agent/
 ### Quick Development Start
 ```bash
 # Linux/macOS
-./run-dev.sh
+./scripts/run-dev.sh
 
 # Windows
-run-dev.bat
+scripts\run-dev.bat
 ```
 
 The development script will:

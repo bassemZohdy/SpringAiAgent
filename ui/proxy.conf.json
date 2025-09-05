@@ -1,8 +1,13 @@
 {
   "/v1/*": {
-    "target": "http://localhost:8080",
-    "secure": true,
+    "target": "http://localhost:1234",
+    "secure": false,
     "changeOrigin": true,
-    "logLevel": "debug"
+    "logLevel": "debug",
+    "headers": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+    },
+    "bypass": null
   }
 }

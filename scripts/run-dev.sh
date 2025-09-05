@@ -143,16 +143,16 @@ echo "🏗️  Building and starting services..."
 
 # Step 1: Build and install agent library
 print_info "Building agent library..."
-cd agent
+cd ../scripts/agent
 if ! $MAVEN_CMD clean install -DskipTests; then
     print_error "Failed to build agent library"
 fi
-cd ..
+cd ../scripts
 print_status "Agent library built and installed"
 
 # Step 2: Install Angular dependencies
 print_info "Installing Angular dependencies..."
-cd ui
+cd ../scripts/ui
 if [ ! -d node_modules ]; then
     if ! npm install; then
         print_error "Failed to install Angular dependencies"
@@ -161,14 +161,14 @@ if [ ! -d node_modules ]; then
 else
     print_info "Angular dependencies already installed"
 fi
-cd ..
+cd ../scripts
 
 # Step 3: Start Spring Boot application in background
 print_info "Starting Spring Boot application..."
-cd spring-ai-agent
+cd ../scripts/spring-ai-agent
 $MAVEN_CMD spring-boot:run -Dspring-boot.run.profiles=dev > ../spring-boot.log 2>&1 &
 AGENT_PID=$!
-cd ..
+cd ../scripts
 
 # Wait for Spring Boot to start
 print_info "Waiting for Spring Boot to start..."
@@ -189,10 +189,10 @@ print_status "Spring Boot application started (PID: $AGENT_PID)"
 
 # Step 4: Start Angular UI in background
 print_info "Starting Angular UI..."
-cd ui
+cd ../scripts/ui
 npm start > ../angular.log 2>&1 &
 UI_PID=$!
-cd ..
+cd ../scripts
 
 # Wait for Angular to start
 print_info "Waiting for Angular UI to start..."

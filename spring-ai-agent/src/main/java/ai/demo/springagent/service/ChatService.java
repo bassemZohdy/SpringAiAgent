@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -31,13 +32,15 @@ public class ChatService {
     private final AiModelConfiguration aiModelConfig;
     private final ThreadService threadService;
     private final OpenAIProvider openAIProvider;
+    private final SessionMappingService sessionMappingService;
 
     public ChatService(ChatClient chatClient, AiModelConfiguration aiModelConfig, ThreadService threadService,
-                      OpenAIProvider openAIProvider) {
+                      OpenAIProvider openAIProvider, SessionMappingService sessionMappingService) {
         this.chatClient = chatClient;
         this.aiModelConfig = aiModelConfig;
         this.threadService = threadService;
         this.openAIProvider = openAIProvider;
+        this.sessionMappingService = sessionMappingService;
     }
 
     public ChatResponse processChat(ChatRequest request, String provider) {
@@ -56,6 +59,45 @@ public class ChatService {
                    provider, request.getModel(), duration);
         
         return response;
+    }
+
+    public ChatResponse processChatWithMemoryAdvisor(ChatRequest request, String provider) {
+        logger.debug("Processing chat request with memory advisor - provider: {}, model: {}, threadId: {}", 
+                    provider, request.getModel(), request.getThreadId());
+        
+        long startTime = System.currentTimeMillis();
+        
+        // Map thread ID to session ID for model-level session management
+        String sessionId = sessionMappingService.getOrCreateSessionId(request.getThreadId());
+        String conversationId = request.getThreadId() != null ? request.getThreadId() : sessionId;
+        
+        // Set the session ID in the request for downstream processing
+        request.setSessionId(sessionId);
+        
+        // Get the user message from the last message in the request
+        String userMessage = "";
+        if (!request.getMessages().isEmpty()) {
+            ChatRequest.Message lastMessage = request.getMessages().get(request.getMessages().size() - 1);
+            if ("user".equals(lastMessage.getRole())) {
+                userMessage = lastMessage.getContent();
+            }
+        }
+        
+        // Use ChatClient with memory advisor and session mapping
+        String response = chatClient.prompt()
+                .user(userMessage)
+                .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, conversationId))
+                .call()
+                .content();
+        
+        // Create ChatResponse in OpenAI format
+        ChatResponse chatResponse = createChatResponse(response, request.getModel());
+        
+        long duration = System.currentTimeMillis() - startTime;
+        logger.info("Chat completion with memory advisor successful - provider: {}, model: {}, threadId: {}, sessionId: {}, conversationId: {}, duration: {}ms", 
+                   provider, request.getModel(), request.getThreadId(), sessionId, conversationId, duration);
+        
+        return chatResponse;
     }
     
     @Async
@@ -158,6 +200,33 @@ public class ChatService {
         }
     }
 
+    private ChatResponse createChatResponse(String content, String model) {
+        ChatResponse response = new ChatResponse();
+        response.setId("chatcmpl-" + UUID.randomUUID().toString().replace("-", ""));
+        response.setObject("chat.completion");
+        response.setCreated(System.currentTimeMillis() / 1000);
+        response.setModel(model);
+        
+        ChatResponse.Choice choice = new ChatResponse.Choice();
+        choice.setIndex(0);
+        choice.setFinishReason("stop");
+        
+        ChatResponse.Message message = new ChatResponse.Message();
+        message.setRole("assistant");
+        message.setContent(content);
+        choice.setMessage(message);
+        
+        response.setChoices(List.of(choice));
+        
+        ChatResponse.Usage usage = new ChatResponse.Usage();
+        usage.setPromptTokens(0); // Would need token counting implementation
+        usage.setCompletionTokens(0);
+        usage.setTotalTokens(0);
+        response.setUsage(usage);
+        
+        return response;
+    }
+
     public Map<String, Object> getAvailableModels() {
         return Map.of(
             "object", "list",
@@ -168,6 +237,14 @@ public class ChatService {
                     "owned_by", "spring-ai-agent"
                 )
             )
+        );
+    }
+
+    public Map<String, Object> getSessionStatistics() {
+        return Map.of(
+            "sessionMappings", sessionMappingService.getAllMappings(),
+            "totalMappings", sessionMappingService.getAllMappings().size(),
+            "statistics", sessionMappingService.getStatistics()
         );
     }
 }
