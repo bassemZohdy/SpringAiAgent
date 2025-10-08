@@ -14,6 +14,8 @@ spring:
 # AI Configuration
 ai:
   model: ${AI_MODEL:gpt-5-nano}
+  max-history-tokens: ${AI_MAX_HISTORY_TOKENS:4096}
+  chars-per-token: ${AI_CHARS_PER_TOKEN:4}
 
 management:
   endpoints:

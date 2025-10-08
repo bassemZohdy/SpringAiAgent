@@ -190,24 +190,31 @@ The system uses OpenAI as the LLM provider via Spring AI ChatClient integration.
 
 ## Error Handling
 
-All errors follow OpenAI error format:
+All errors follow OpenAI-compatible error format with proper HTTP status codes:
 
 ```json
 {
   "error": {
-    "message": "Provider authentication failed",
-    "type": "provider_error", 
-    "code": "authentication_failed"
+    "message": "Invalid API key provided. Please check your OPENAI_API_KEY environment variable.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
   }
 }
 ```
+
+Common cases:
+- 401 Unauthorized – `invalid_api_key`
+- 429 Too Many Requests – `rate_limit_exceeded`
+- 404/400 Not Found – `model_not_found`
+- 400 Bad Request – `invalid_request`
+- 500 Internal Server Error – `internal_error`
 
 ## Thread Storage
 
 - Threads are stored in-memory using ConcurrentHashMap
 - Messages are automatically associated with threads
 - Thread context is included in chat completions when `thread_id` is provided
-- History is tail-truncated if it exceeds token limits
+- History is tail-truncated if it exceeds a configurable token budget (`AI_MAX_HISTORY_TOKENS`, heuristic `AI_CHARS_PER_TOKEN`)
 
 ## Compatibility
 

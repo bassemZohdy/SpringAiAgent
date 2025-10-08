@@ -1,23 +1,34 @@
 package ai.demo.springagent.dto;
 
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
 import java.util.List;
 
 public class ChatRequest {
     
+    @NotBlank
     private String model = "gpt-3.5-turbo";
     
     @NotEmpty
-    private List<Message> messages;
+    @NotEmpty
+    private List<@Valid Message> messages;
     
     private String threadId;
     private String sessionId; // Model-level session ID for conversation continuity
+    @DecimalMin(value = "0.0")
+    @DecimalMax(value = "2.0")
     private Double temperature = 0.7;
+
+    @Min(1)
     private Integer maxTokens;
     private boolean stream = false;
 
     public static class Message {
+        @NotBlank
+        @Pattern(regexp = "^(user|assistant|system)$", message = "role must be user, assistant, or system")
         private String role;
+
+        @NotBlank
         private String content;
 
         public Message() {}

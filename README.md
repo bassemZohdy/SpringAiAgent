@@ -60,11 +60,15 @@ scripts\run-dev.bat
 
 The development script will:
 1. Check prerequisites
-2. Create .env from .env.example if needed
+2. Create .env/.env.local from examples if needed
 3. Build agent library
 4. Install Angular dependencies
 5. Start Spring Boot API on port 8080
 6. Start Angular UI on port 4200 with proxy configuration
+
+Notes:
+- Scripts now auto-load variables from `.env.local` and ensure a clean restart by freeing ports `8080` and `4200`.
+- Logs are written to `spring-boot.log` and `angular.log` at the repo root.
 
 ### Manual Development Setup
 
@@ -133,6 +137,23 @@ docker-compose up -d --scale spring-ai-agent=2
 | `SPRING_PROFILES_ACTIVE` | Spring profiles | `docker` |
 | `SERVER_PORT` | Spring Boot port | `8080` |
 | `UI_PORT` | Angular UI port | `4200` |
+| `AI_MAX_HISTORY_TOKENS` | Token budget for thread history | `4096` |
+| `AI_CHARS_PER_TOKEN` | Char-per-token heuristic | `4` |
+
+### Local LM Studio Setup
+
+For zero-cost development using LM Studio:
+
+1. Install and run LM Studio with the OpenAI-compatible server at `http://localhost:1234/v1`.
+2. Create `.env.local` in the repo root (or copy from `.env.local.example`) with:
+
+```
+OPENAI_API_KEY=lm-studio
+OPENAI_BASE_URL=http://localhost:1234/v1
+AI_MODEL=openai/gpt-oss-20b
+```
+
+The dev scripts load `.env.local` automatically, and the backend also reads it via a lightweight environment post-processor when the `dev` profile is active.
 
 ### API Usage Examples
 
@@ -176,6 +197,15 @@ curl -N http://localhost:8080/v1/chat/completions \
 - [API Usage Guide](./API_USAGE.md) - Comprehensive API documentation with examples
 - [TODO List](./TODO.md) - Project roadmap and task tracking
 - [CLAUDE.md](./CLAUDE.md) - Development setup and build instructions
+
+### Error Handling
+
+The API returns OpenAI-compatible error responses with appropriate HTTP status codes:
+- 401 Unauthorized – `invalid_api_key`
+- 429 Too Many Requests – `rate_limit_exceeded`
+- 404/400 Not Found – `model_not_found`
+- 400 Bad Request – `invalid_request`
+- 500 Internal Server Error – `internal_error`
 
 ## 🤝 Contributing
 

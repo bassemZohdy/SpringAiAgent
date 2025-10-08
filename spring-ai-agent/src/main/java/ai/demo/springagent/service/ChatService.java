@@ -86,7 +86,8 @@ public class ChatService {
         // Use ChatClient with memory advisor and session mapping
         String response = chatClient.prompt()
                 .user(userMessage)
-                .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, conversationId))
+                // Use conversation scoping for memory advisor; compatible with Spring AI M4
+                .advisors(a -> a.param("conversationId", conversationId))
                 .call()
                 .content();
         
@@ -167,6 +168,9 @@ public class ChatService {
                 messages = threadHistory.stream()
                         .map(tm -> new ChatRequest.Message(tm.getRole(), tm.getContent()))
                         .collect(Collectors.toList());
+
+                // Apply approximate token-based truncation to fit within budget
+                messages = truncateByTokenBudget(messages, aiModelConfig.getMaxHistoryTokens(), aiModelConfig.getCharsPerToken());
             }
         }
         
@@ -180,6 +184,31 @@ public class ChatService {
         processedRequest.setThreadId(request.getThreadId());
         
         return processedRequest;
+    }
+
+    private List<ChatRequest.Message> truncateByTokenBudget(List<ChatRequest.Message> messages, int maxTokens, int charsPerToken) {
+        if (messages == null || messages.isEmpty()) return messages;
+        int budgetChars = Math.max(1, maxTokens) * Math.max(1, charsPerToken);
+
+        int totalChars = 0;
+        for (ChatRequest.Message m : messages) {
+            totalChars += (m.getContent() != null ? m.getContent().length() : 0);
+        }
+        if (totalChars <= budgetChars) return messages;
+
+        // Keep latest messages within budget; always keep last user message if possible
+        int running = 0;
+        java.util.LinkedList<ChatRequest.Message> deque = new java.util.LinkedList<>();
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            ChatRequest.Message m = messages.get(i);
+            int len = (m.getContent() != null ? m.getContent().length() : 0);
+            if (running + len > budgetChars && !deque.isEmpty()) {
+                break;
+            }
+            deque.addFirst(m);
+            running += len;
+        }
+        return List.copyOf(deque);
     }
     
     private LLMProvider getProvider(String provider) {

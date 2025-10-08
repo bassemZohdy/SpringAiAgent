@@ -60,12 +60,12 @@ export class ChatService {
   constructor(private http: HttpClient) {}
 
   createCompletion(request: ChatRequest, options: { stream: boolean, provider?: string } = { stream: false }): Observable<ChatResponse> {
-    const headers = new HttpHeaders({
+    let headers = new HttpHeaders({
       'Content-Type': 'application/json'
     });
     
     if (options.provider) {
-      headers.set('X-LLM-Provider', options.provider);
+      headers = headers.set('X-LLM-Provider', options.provider);
     }
 
     const body = {
@@ -82,10 +82,10 @@ export class ChatService {
 
   private createStreamingCompletion(request: ChatRequest, headers: HttpHeaders): Observable<ChatResponse> {
     return new Observable(observer => {
-      const eventSource = new EventSource(`${this.baseUrl}/chat/completions`, {
-      });
+      const controller = new AbortController();
+      const signal = controller.signal;
 
-      // For now, we'll use fetch API for streaming since EventSource doesn't support POST
+      // Use fetch API for streaming since EventSource doesn't support POST
       fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -93,9 +93,22 @@ export class ChatService {
           'Accept': 'text/event-stream',
           ...(headers.get('X-LLM-Provider') && { 'X-LLM-Provider': headers.get('X-LLM-Provider')! })
         },
-        body: JSON.stringify(request)
+        body: JSON.stringify(request),
+        signal
       })
       .then(response => {
+        if (!response.ok) {
+          // Try to parse OpenAI-compatible error
+          return response.text().then(text => {
+            try {
+              const json = JSON.parse(text);
+              observer.error(json);
+            } catch {
+              observer.error({ status: response.status, message: response.statusText, body: text });
+            }
+            return Promise.resolve();
+          });
+        }
         if (!response.body) {
           throw new Error('No response body');
         }
@@ -166,8 +179,15 @@ export class ChatService {
         return readChunk();
       })
       .catch(error => {
-        observer.error(error);
+        // Normalize error shape
+        const err = (error && error.message) ? { error: { message: error.message, type: 'network_error', code: 'network_error' } } : error;
+        observer.error(err);
       });
+
+      // Cleanup on unsubscribe
+      return () => {
+        try { controller.abort(); } catch {}
+      };
     });
   }
 }

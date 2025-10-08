@@ -96,9 +96,12 @@ else
     print_status "Using .env.local for development"
 fi
 
-# Source environment variables from the selected file
+# Source environment variables from the selected file (supports simple KEY=VALUE lines)
 if [ -f "$ENV_FILE" ]; then
-    export $(cat "$ENV_FILE" | grep -v '^#' | xargs)
+    set -a
+    # shellcheck disable=SC1090
+    . "$ENV_FILE"
+    set +a
     print_info "Environment loaded from $ENV_FILE"
 fi
 
@@ -143,7 +146,7 @@ echo "🏗️  Building and starting services..."
 
 # Step 1: Build and install agent library
 print_info "Building agent library..."
-cd ../scripts/agent
+cd ../agent
 if ! $MAVEN_CMD clean install -DskipTests; then
     print_error "Failed to build agent library"
 fi
@@ -152,7 +155,7 @@ print_status "Agent library built and installed"
 
 # Step 2: Install Angular dependencies
 print_info "Installing Angular dependencies..."
-cd ../scripts/ui
+cd ../ui
 if [ ! -d node_modules ]; then
     if ! npm install; then
         print_error "Failed to install Angular dependencies"
@@ -164,8 +167,18 @@ fi
 cd ../scripts
 
 # Step 3: Start Spring Boot application in background
+print_info "Ensuring clean restart (ports 8080/4200) ..."
+if command -v lsof >/dev/null 2>&1; then
+  if lsof -i:8080 -sTCP:LISTEN -t >/dev/null 2>&1; then
+    kill "$(lsof -i:8080 -sTCP:LISTEN -t)" || true
+  fi
+  if lsof -i:4200 -sTCP:LISTEN -t >/dev/null 2>&1; then
+    kill "$(lsof -i:4200 -sTCP:LISTEN -t)" || true
+  fi
+fi
+
 print_info "Starting Spring Boot application..."
-cd ../scripts/spring-ai-agent
+cd ../spring-ai-agent
 $MAVEN_CMD spring-boot:run -Dspring-boot.run.profiles=dev > ../spring-boot.log 2>&1 &
 AGENT_PID=$!
 cd ../scripts
@@ -189,7 +202,7 @@ print_status "Spring Boot application started (PID: $AGENT_PID)"
 
 # Step 4: Start Angular UI in background
 print_info "Starting Angular UI..."
-cd ../scripts/ui
+cd ../ui
 npm start > ../angular.log 2>&1 &
 UI_PID=$!
 cd ../scripts

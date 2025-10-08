@@ -30,14 +30,14 @@ This guide explains how to run Spring AI Agent with LM Studio for local testing 
    cp .env.local.example .env.local
    ```
 
-2. **Edit .env.local** to match your LM Studio setup:
+2. **Edit .env.local** to match your LM Studio setup (backend auto-loads `.env.local` when `dev` profile is active; dev scripts also load it):
    ```bash
    # LM Studio Configuration  
    OPENAI_API_KEY=lm-studio
    OPENAI_BASE_URL=http://localhost:1234/v1
    
    # Model Configuration (use the exact model name from LM Studio)
-   AI_MODEL=gpt-oss-mini
+   AI_MODEL=openai/gpt-oss-20b`nAI_MAX_HISTORY_TOKENS=4096`nAI_CHARS_PER_TOKEN=4
    
    # Application Configuration
    SPRING_PROFILES_ACTIVE=dev
@@ -53,13 +53,12 @@ This guide explains how to run Spring AI Agent with LM Studio for local testing 
    mvn clean install
    ```
 
-2. **Start the Spring Boot application**:
+2. **Start the Spring Boot application** (or use dev scripts):
    ```bash
    cd spring-ai-agent
-   mvn spring-boot:run
-   ```
+   mvn spring-boot:run -Dspring-boot.run.profiles=dev`n`nAlternatively, from the repo root:`n`n```bash`n# Linux/macOS`n./scripts/run-dev.sh`n`n# Windows`nscripts\\run-dev.bat`n````n```
 
-3. **Start the Angular UI** (in another terminal):
+3. **Start the Angular UI** (dev scripts start it automatically; manual commands below):
    ```bash
    cd ui
    npm install
@@ -132,3 +131,25 @@ To switch back to OpenAI API:
    ```
 
 The application will automatically use the online OpenAI API instead of your local LM Studio instance.
+
+
+
+
+
+
+### Quick Smoke Tests
+
+After starting both services, you can run:
+
+`ash
+# Windows
+scripts\test-lm-studio.bat
+
+# Linux/macOS
+./scripts/test-lm-studio.sh
+`
+
+These run a non-streaming and streaming request via the API and show results, and you can check provider health at:
+
+``nhttp://localhost:8080/actuator/health/provider
+``n

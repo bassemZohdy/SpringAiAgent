@@ -2,7 +2,7 @@
 
 *Generated: 2025-09-03*
 
-## 🎯 Current Version: v1.1.0
+## 🎯 Current Version: v1.2.0
 
 ### ✅ Major Features Completed
 
@@ -12,11 +12,10 @@
 - **Parameter Control**: `stream=true/false` parameter controls response type
 - **Error Handling**: OpenAI-compatible error responses
 
-#### Multi-Provider Support
+#### Provider Support
 - **Provider Interface**: Pluggable `LLMProvider` architecture
 - **OpenAI Provider**: Using Spring AI ChatClient
-- **Anthropic Provider**: Direct integration with Claude Messages API via WebClient
-- **Header-Based Selection**: `X-LLM-Provider: openai|anthropic` header support
+- **Header-Based Selection**: `X-LLM-Provider: openai` header support
 
 #### Streaming Implementation
 - **Server-Sent Events**: Proper SSE streaming with OpenAI-compatible chunks
@@ -33,7 +32,7 @@
 #### Angular Frontend
 - **Modern UI**: Material Design components with responsive layout
 - **Streaming Toggle**: User-controlled streaming vs non-streaming requests
-- **Provider Selection**: Dropdown to switch between OpenAI and Anthropic
+- **Provider Selection**: OpenAI (future providers TBD)
 - **Real-time Updates**: Live response streaming with proper formatting
 - **Thread Integration**: Automatic thread management and history
 
@@ -42,7 +41,7 @@
 ### Backend (Spring Boot)
 - **Controllers**: 2 (ChatController, ThreadController)
 - **Services**: 2 (ChatService, ThreadService)
-- **Providers**: 2 (OpenAIProvider, AnthropicProvider)
+- **Providers**: 1 (OpenAIProvider)
 - **DTOs**: 4 (ChatRequest, ChatResponse, ChatCompletionChunk, + Thread DTOs)
 - **Endpoints**: 7 total
   - 1 Chat completion endpoint (unified)
@@ -88,7 +87,7 @@
 
 ### Known Issues
 1. **API Key Management**: No validation or rotation
-2. **Token Counting**: No proper token estimation for thread truncation
+2. **Token Counting**: Approximate token estimation + truncation implemented (heuristic)
 3. **Error Mapping**: Some provider errors not properly mapped to OpenAI format
 4. **Rate Limiting**: No built-in rate limiting implementation
 
@@ -163,3 +162,6 @@
 **Overall Project Health: 🟢 EXCELLENT**
 
 The project has successfully delivered all core requirements with a clean, extensible architecture. Ready for production deployment with minor hardening improvements.
+
+
+

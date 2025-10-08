@@ -88,33 +88,36 @@ if not exist ..\.env.local (
     echo [OK] Using .env.local for development
 )
 
-REM Check configuration based on environment
-findstr /C:"OPENAI_API_KEY=your-openai-api-key-here" %ENV_FILE% >nul
-if not errorlevel 1 (
-    echo [ERROR] OPENAI_API_KEY is not set in %ENV_FILE% file. Please set your OpenAI API key.
+REM Load environment variables from file
+echo [INFO] Loading environment variables from %ENV_FILE%
+for /f "usebackq tokens=1,* delims==" %%A in ("%ENV_FILE%") do (
+    set line=%%A
+    if not "!line!"=="" if not "!line:~0,1!"=="#" set "%%A=%%B"
+)
+
+REM Validate configuration
+if not defined OPENAI_API_KEY (
+    echo [ERROR] OPENAI_API_KEY is not set. Please set it in %ENV_FILE%.
     pause
     exit /b 1
 )
 
-findstr /C:"OPENAI_API_KEY=lm-studio" %ENV_FILE% >nul
-if not errorlevel 1 (
+if /I "%OPENAI_API_KEY%"=="your-openai-api-key-here" (
+    echo [ERROR] OPENAI_API_KEY is set to placeholder value. Update %ENV_FILE%.
+    pause
+    exit /b 1
+)
+
+if /I "%OPENAI_API_KEY%"=="lm-studio" (
     echo [INFO] Using LM Studio configuration for local development
-    findstr /C:"OPENAI_BASE_URL=http://localhost:1234/v1" %ENV_FILE% >nul
-    if errorlevel 1 (
+    if /I not "%OPENAI_BASE_URL%"=="http://localhost:1234/v1" (
         echo [ERROR] LM Studio base URL not configured. Expected: http://localhost:1234/v1
-        pause
-        exit /b 1
-    )
-) else (
-    findstr /C:"OPENAI_API_KEY=" %ENV_FILE% >nul
-    if errorlevel 1 (
-        echo [ERROR] OPENAI_API_KEY is not found in %ENV_FILE% file. Please set your OpenAI API key or use LM Studio configuration.
         pause
         exit /b 1
     )
 )
 
-echo [OK] Environment configuration validated from %ENV_FILE%
+echo [OK] Environment loaded and validated from %ENV_FILE%
 echo.
 
 echo [BUILD] Building and starting services...
@@ -146,6 +149,16 @@ if not exist node_modules (
     echo [INFO] Angular dependencies already installed
 )
 cd ..\scripts
+
+REM Kill any process using ports 8080 (API) and 4200 (UI) to ensure clean restart
+for /f "tokens=5" %%p in ('netstat -ano ^| findstr ":8080" ^| findstr LISTENING') do (
+    echo [INFO] Stopping process on port 8080 (PID %%p)
+    taskkill /F /PID %%p >nul 2>&1
+)
+for /f "tokens=5" %%p in ('netstat -ano ^| findstr ":4200" ^| findstr LISTENING') do (
+    echo [INFO] Stopping process on port 4200 (PID %%p)
+    taskkill /F /PID %%p >nul 2>&1
+)
 
 REM Step 3: Start Spring Boot application in background
 echo [INFO] Starting Spring Boot application...

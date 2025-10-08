@@ -20,21 +20,21 @@ This file tracks ongoing tasks, improvements, and future enhancements for the Sp
 
 ### 🔄 In Progress
 - [ ] Unit test coverage expansion
-- [ ] **LM Studio Integration Fix**: Spring Boot environment variable loading for local development
+- [x] **LM Studio Integration Fix**: Spring Boot environment variable loading for local development
 
 ### 📋 Pending Tasks
 
 #### High Priority
-- [ ] **Local Development Environment**: Fix Spring Boot configuration to properly load .env.local for LM Studio integration
-- [ ] **Development Scripts**: Ensure run-dev.sh/run-dev.bat correctly restart services with updated environment
-- [ ] **LM Studio Testing**: Validate complete UI/API integration with local LM Studio server
+- [x] **Local Development Environment**: Fix Spring Boot configuration to properly load .env.local for LM Studio integration
+- [x] **Development Scripts**: Ensure run-dev.sh/run-dev.bat correctly restart services with updated environment
+- [ ] **LM Studio Testing**: Validate complete UI/API integration with local LM Studio server (smoke scripts added: scripts/test-lm-studio.*)
 - [ ] **Testing**: Create integration tests for streaming endpoints
-- [ ] **Testing**: Add unit tests for error handling and exception mapping
-- [ ] **Documentation**: Update main README.md with error handling features and LM Studio setup
-- [ ] **Input Validation**: Add comprehensive request parameter validation
+- [x] **Testing**: Add unit tests for error handling and exception mapping
+- [x] **Documentation**: Update main README.md with error handling features and LM Studio setup
+- [x] **Input Validation**: Add comprehensive request parameter validation
 
 #### Medium Priority  
-- [ ] **Token Estimation**: Implement proper token counting for thread history truncation
+- [x] **Token Estimation**: Implement approximate token counting + truncation
 - [ ] **Rate Limiting**: Add rate limiting for API endpoints
 - [ ] **Metrics**: Add performance metrics collection
 - [ ] **Security**: Implement API key rotation and secure storage
@@ -49,11 +49,11 @@ This file tracks ongoing tasks, improvements, and future enhancements for the Sp
 
 ## 🐛 Known Issues
 - [x] ~~OpenAI API authentication errors cause 500 responses instead of proper error format~~ ✅ Fixed
-- [ ] **Environment Loading**: Spring Boot not loading .env.local configuration for LM Studio integration
-- [ ] **Development Scripts**: run-dev.bat not properly restarting services with updated environment variables  
-- [ ] Angular streaming service needs better error handling for network failures
-- [ ] Thread context truncation not implemented (could exceed token limits)
-- [ ] Provider health checks not implemented
+- [x] **Environment Loading**: Spring Boot not loading .env.local configuration for LM Studio integration
+- [x] **Development Scripts**: run-dev.bat not properly restarting services with updated environment variables  
+- [x] Angular streaming service needs better error handling for network failures
+- [x] Thread context truncation implemented with approximate token budget
+- [x] Provider health checks added via Actuator health indicator (provider)
 
 ## 🔧 Technical Debt
 - [ ] Refactor streaming logic to use proper reactive streams
@@ -62,7 +62,7 @@ This file tracks ongoing tasks, improvements, and future enhancements for the Sp
 - [x] ~~Implement proper async exception handling~~ ✅ Fixed with GlobalExceptionHandler
 
 ## 📚 Documentation Updates Needed
-- [ ] Update main README.md with unified endpoint information
+- [x] Update main README.md with unified endpoint information
 - [ ] Create API reference documentation
 - [ ] Add deployment guide for Docker and Kubernetes
 - [ ] Document provider configuration and setup
@@ -76,7 +76,7 @@ This file tracks ongoing tasks, improvements, and future enhancements for the Sp
 - [ ] API compatibility tests against OpenAI specification
 
 ## 📊 Monitoring & Observability
-- [ ] Add health check endpoints for each provider
+- [x] Add health check endpoints for each provider (Actuator /health/provider)
 - [x] ~~Implement request/response logging~~ ✅ Added structured logging with timing metrics
 - [ ] Add metrics for response times and error rates
 - [ ] Create dashboard for system monitoring
@@ -147,4 +147,26 @@ When assigning new tasks, please use this format:
 
 ---
 
-*Last Updated: 2025-09-04*
+*Last Updated: 2025-10-08*
+
+## 2025-10-08 Updates
+- Added High Priority: Backend build failure fix for ChatService param.
+- Added Known Issue: Angular CSS budget exceed in enhanced-chat component.
+- Added In Progress: Build Unblocker to restore compilation.
+- Completed: Backend build compiles after ChatService advisor param fix.
+ - Completed: UI builds after raising `anyComponentStyle` budget to 6/8kb (initial bundle still triggers warning threshold).
+
+### 2025-10-08 Updates (cont.)
+- Completed: Spring Boot dev profile loads `.env.local` via EnvironmentPostProcessor.
+- Completed: `scripts/run-dev.bat` and `scripts/run-dev.sh` load env and perform clean restarts (free 8080/4200).
+- Completed: `ChatRequest` input validation tightened (model/messages/roles/temperature/maxTokens).
+- Completed: Unit tests for validation and error mapping.
+- Completed: README updated with LM Studio setup and error handling docs.
+- Pending: Add robust SSE streaming integration test harness (MockMvc + SseEmitter async).
+
+### Known Issues Addendum (2025-10-08)
+- [x] ~~Compile Error: `ChatMemory.CONVERSATION_ID` not found (Spring AI 1.0.0-M4)~~ Fixed
+- [ ] Angular initial bundle exceeds 500kb production warning; component style budget resolved.
+
+### Docs Addendum (2025-10-08)
+- [x] Contributor guide added: `AGENTS.md` at repo root.

@@ -29,3 +29,8 @@ logging:
     root: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# AI configuration overrides for dev (optional)
+ai:
+  max-history-tokens: ${AI_MAX_HISTORY_TOKENS:4096}
+  chars-per-token: ${AI_CHARS_PER_TOKEN:4}
