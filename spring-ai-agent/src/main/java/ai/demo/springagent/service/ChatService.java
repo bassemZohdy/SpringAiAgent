@@ -44,20 +44,38 @@ public class ChatService {
     }
 
     public ChatResponse processChat(ChatRequest request, String provider) {
-        logger.debug("Processing chat request - provider: {}, model: {}, threadId: {}", 
+        logger.debug("Processing chat request - provider: {}, model: {}, threadId: {}",
                     provider, request.getModel(), request.getThreadId());
-        
+
         long startTime = System.currentTimeMillis();
         ChatRequest processedRequest = processThreadHistory(request);
         LLMProvider llmProvider = getProvider(provider);
-        
+
         ChatResponse response = llmProvider.complete(processedRequest).block();
+
+        // Validate response content
+        if (response == null) {
+            throw new RuntimeException("Received null response from provider");
+        }
+
+        if (response.getChoices() == null || response.getChoices().isEmpty()) {
+            logger.warn("Received response with no choices, creating default response");
+            response = createDefaultResponse(request.getModel());
+        } else {
+            ChatResponse.Choice choice = response.getChoices().get(0);
+            if (choice.getMessage() == null || choice.getMessage().getContent() == null ||
+                choice.getMessage().getContent().trim().isEmpty()) {
+                logger.warn("Received empty response content, using fallback");
+                choice.setMessage(new ChatResponse.Message("assistant", "I apologize, but I couldn't generate a response. Please try again."));
+            }
+        }
+
         saveAssistantResponse(request.getThreadId(), response);
-        
+
         long duration = System.currentTimeMillis() - startTime;
-        logger.info("Chat completion successful - provider: {}, model: {}, duration: {}ms", 
+        logger.info("Chat completion successful - provider: {}, model: {}, duration: {}ms",
                    provider, request.getModel(), duration);
-        
+
         return response;
     }
 
@@ -235,25 +253,29 @@ public class ChatService {
         response.setObject("chat.completion");
         response.setCreated(System.currentTimeMillis() / 1000);
         response.setModel(model);
-        
+
         ChatResponse.Choice choice = new ChatResponse.Choice();
         choice.setIndex(0);
         choice.setFinishReason("stop");
-        
+
         ChatResponse.Message message = new ChatResponse.Message();
         message.setRole("assistant");
         message.setContent(content);
         choice.setMessage(message);
-        
+
         response.setChoices(List.of(choice));
-        
+
         ChatResponse.Usage usage = new ChatResponse.Usage();
         usage.setPromptTokens(0); // Would need token counting implementation
         usage.setCompletionTokens(0);
         usage.setTotalTokens(0);
         response.setUsage(usage);
-        
+
         return response;
+    }
+
+    private ChatResponse createDefaultResponse(String model) {
+        return createChatResponse("I apologize, but I'm having trouble generating a response. Please try again.", model);
     }
 
     public Map<String, Object> getAvailableModels() {

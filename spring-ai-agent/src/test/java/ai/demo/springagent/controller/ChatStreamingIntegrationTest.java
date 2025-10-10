@@ -20,16 +20,18 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.UUID;
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import org.junit.jupiter.api.Disabled;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Disabled("SseEmitter + MockMvc async handling needs additional setup; pending dedicated test harness")
 class ChatStreamingIntegrationTest {
 
     @Autowired
@@ -91,22 +93,44 @@ class ChatStreamingIntegrationTest {
                 "}";
 
         var mvcResult = mockMvc.perform(
-                        MockMvcRequestBuilders.post("/v1/chat/completions")
+                        post("/v1/chat/completions")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header("Accept", "text/event-stream")
                                 .content(body)
                 )
+                .andExpect(request().asyncStarted())
                 .andReturn();
 
         // SseEmitter responses are async in Spring MVC
-        var result = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch(mvcResult))
+        var result = mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
+                .andExpect(content().contentType("text/event-stream;charset=UTF-8"))
                 .andReturn();
 
         String contentStr = result.getResponse().getContentAsString();
         assertThat(contentStr).contains("data:");
-        // Should include our streamed parts concatenated across chunks
+        // Should include our streamed parts across chunks
         assertThat(contentStr).contains("Hello");
         assertThat(contentStr).contains("world");
+        // Verify SSE format
+        assertThat(contentStr).contains("data:");
+        assertThat(contentStr).contains("data: {");
+    }
+
+    @Test
+    void nonStreamingRequestReturnsJsonResponse() throws Exception {
+        String body = "{\n" +
+                "  \"model\": \"test-model\",\n" +
+                "  \"messages\": [{\"role\":\"user\",\"content\":\"Hi\"}],\n" +
+                "  \"stream\": false\n" +
+                "}";
+
+        mockMvc.perform(post("/v1/chat/completions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.choices[0].message.content").value("Hello world!"))
+                .andExpect(jsonPath("$.model").value("test-model"));
     }
 }

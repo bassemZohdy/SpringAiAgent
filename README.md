@@ -5,7 +5,7 @@ A multi-module project providing unified OpenAI-compatible chat completions API 
 ## 🚀 Features
 
 - **Unified API**: Single `/v1/chat/completions` endpoint for streaming and non-streaming
-- **OpenAI Integration**: Full OpenAI API compatibility with gpt-3.5-turbo and gpt-4 models
+- **OpenAI Integration**: Full OpenAI API compatibility with gpt-5-nano and gpt-4 models
 - **Streaming Support**: Real-time Server-Sent Events (SSE) streaming
 - **Thread Management**: OpenAI Assistants API-compatible conversation threads
 - **Modern UI**: Angular Material Design interface with streaming toggle
@@ -140,17 +140,17 @@ docker-compose up -d --scale spring-ai-agent=2
 | `AI_MAX_HISTORY_TOKENS` | Token budget for thread history | `4096` |
 | `AI_CHARS_PER_TOKEN` | Char-per-token heuristic | `4` |
 
-### Local LM Studio Setup
+### OpenAI API Configuration
 
-For zero-cost development using LM Studio:
+For development using OpenAI:
 
-1. Install and run LM Studio with the OpenAI-compatible server at `http://localhost:1234/v1`.
-2. Create `.env.local` in the repo root (or copy from `.env.local.example`) with:
+1. Sign up for an OpenAI account at https://platform.openai.com
+2. Create an API key from the API keys section
+3. Create `.env.local` in the repo root (or copy from `.env.example`) with:
 
 ```
-OPENAI_API_KEY=lm-studio
-OPENAI_BASE_URL=http://localhost:1234/v1
-AI_MODEL=openai/gpt-oss-20b
+OPENAI_API_KEY=your-openai-api-key-here
+AI_MODEL=gpt-5-nano
 ```
 
 The dev scripts load `.env.local` automatically, and the backend also reads it via a lightweight environment post-processor when the `dev` profile is active.
@@ -162,14 +162,14 @@ The dev scripts load `.env.local` automatically, and the backend also reads it v
 curl -s http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "X-LLM-Provider: openai" \
-  -d '{"model":"gpt-3.5-turbo","messages":[{"role":"user","content":"Hello!"}]}'
+  -d '{"model":"gpt-5-nano","messages":[{"role":"user","content":"Hello!"}]}'
 
 # Streaming chat
 curl -N http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Accept: text/event-stream" \
   -H "X-LLM-Provider: openai" \
-  -d '{"model":"gpt-3.5-turbo","messages":[{"role":"user","content":"Tell me a story"}],"stream":true}'
+  -d '{"model":"gpt-5-nano","messages":[{"role":"user","content":"Tell me a story"}],"stream":true}'
 ```
 
 ## 🏗️ Architecture

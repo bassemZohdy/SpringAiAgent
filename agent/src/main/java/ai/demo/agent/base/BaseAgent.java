@@ -2,6 +2,7 @@ package ai.demo.agent.base;
 
 import ai.demo.agent.base.task.Task;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -24,6 +25,7 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements TaskAgent<
     private final String agentId;
     private final String agentName;
     private final String version;
+    private final Instant createdAt;
     private final AgentConfiguration configuration;
     private final List<String> capabilities;
     
@@ -46,11 +48,12 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements TaskAgent<
      * @param configuration the agent configuration
      * @param capabilities the list of capabilities this agent supports
      */
-    protected BaseAgent(String agentName, String version, AgentConfiguration configuration, 
+    protected BaseAgent(String agentName, String version, AgentConfiguration configuration,
                        List<String> capabilities) {
         this.agentId = UUID.randomUUID().toString();
         this.agentName = Objects.requireNonNull(agentName, "Agent name cannot be null");
         this.version = Objects.requireNonNull(version, "Version cannot be null");
+        this.createdAt = Instant.now();
         this.configuration = Objects.requireNonNull(configuration, "Configuration cannot be null");
         this.capabilities = List.copyOf(Objects.requireNonNull(capabilities, "Capabilities cannot be null"));
         this.metrics = new AgentMetrics();
@@ -133,6 +136,11 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements TaskAgent<
     @Override
     public String getVersion() {
         return version;
+    }
+
+    @Override
+    public Instant getCreatedAt() {
+        return createdAt;
     }
     
     // === Configuration ===
