@@ -57,16 +57,16 @@ This file tracks ongoing tasks, improvements, and future enhancements for the Sp
 
 ## 🔧 Technical Debt
 - [ ] Refactor streaming logic to use proper reactive streams
-- [ ] Improve TypeScript type safety in Angular services
+- [x] Improve TypeScript type safety in Angular services
 - [ ] Add proper input validation for all API endpoints
 - [x] ~~Implement proper async exception handling~~ ✅ Fixed with GlobalExceptionHandler
 
 ## 📚 Documentation Updates Needed
 - [x] Update main README.md with unified endpoint information
-- [ ] Create API reference documentation
-- [ ] Add deployment guide for Docker and Kubernetes
-- [ ] Document provider configuration and setup
-- [ ] Create troubleshooting guide
+- [x] Create API reference documentation
+- [x] Add deployment guide for Docker and Kubernetes
+- [x] Document provider configuration and setup
+- [x] Create troubleshooting guide
 
 ## 🧪 Testing Requirements
 - [ ] Unit tests for all provider implementations
@@ -166,7 +166,7 @@ When assigning new tasks, please use this format:
 
 ### Known Issues Addendum (2025-10-08)
 - [x] ~~Compile Error: `ChatMemory.CONVERSATION_ID` not found (Spring AI 1.0.0-M4)~~ Fixed
-- [ ] Angular initial bundle exceeds 500kb production warning; component style budget resolved.
+- [x] Angular initial bundle exceeds 500kb production warning; component style budget resolved.
 
 ### Docs Addendum (2025-10-08)
 - [x] Contributor guide added: `AGENTS.md` at repo root.

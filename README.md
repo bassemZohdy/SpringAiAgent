@@ -195,6 +195,10 @@ curl -N http://localhost:8080/v1/chat/completions \
 ## 📖 Documentation
 
 - [API Usage Guide](./API_USAGE.md) - Comprehensive API documentation with examples
+- [API Reference](./docs/api-reference.md) - Endpoint-level reference for chat, threads, and streaming
+- [Deployment Guide](./docs/deployment-guide.md) - Docker, container registry, and Kubernetes instructions
+- [Provider Configuration](./docs/provider-configuration.md) - Environment variables and provider overrides
+- [Troubleshooting Guide](./docs/troubleshooting.md) - Common fixes for backend, UI, and deployment issues
 - [TODO List](./TODO.md) - Project roadmap and task tracking
 - [CLAUDE.md](./CLAUDE.md) - Development setup and build instructions
 
