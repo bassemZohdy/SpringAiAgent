@@ -24,6 +24,8 @@ class BaseAgentTest {
             assertEquals(AgentState.CREATED, agent.getState());
             assertFalse(agent.isRunning());
 
+            assertTrue(agent instanceof TaskAgent);
+
             agent.start();
             assertEquals(AgentState.STARTED, agent.getState());
             assertTrue(agent.isRunning());

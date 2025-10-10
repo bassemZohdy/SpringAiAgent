@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @param <TASK> The type of task/input the agent processes (must extend Task)
  * @param <RESULT> The type of result/output the agent produces
  */
-public abstract class BaseAgent<TASK extends Task, RESULT> implements Agent<TASK, RESULT> {
+public abstract class BaseAgent<TASK extends Task, RESULT> implements TaskAgent<TASK, RESULT> {
     
     // Core identity and configuration
     private final String agentId;
