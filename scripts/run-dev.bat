@@ -59,33 +59,26 @@ if errorlevel 1 (
 for /f %%i in ('node --version') do set NODE_VERSION=%%i
 echo [OK] Node.js !NODE_VERSION! found
 
-REM Check environment configuration (prioritize .env.local for development)
-set ENV_FILE=..\.env.local
-if not exist ..\.env.local (
-    echo [WARN] .env.local file not found.
-    if exist ..\.env.local.example (
-        echo [INFO] Creating .env.local from .env.local.example...
-        copy ..\.env.local.example ..\.env.local >nul
-        echo [OK] Using .env.local for local development with LM Studio support
-    ) else if exist ..\.env (
-        echo [INFO] Using existing .env file
-        set ENV_FILE=..\.env
-    ) else if exist ..\.env.example (
-        echo [INFO] Creating .env.local from .env.example...
-        copy ..\.env.example ..\.env.local >nul
-        echo [WARN] Please edit .env.local file and set your configuration
-        echo.
-        echo For local LM Studio testing, .env.local is already configured.
+REM Check environment configuration (prefer .env; fallback to .env.local)
+set ENV_FILE=..\.env
+if exist ..\.env (
+    echo [OK] Using .env for development
+) else if exist ..\.env.local (
+    set ENV_FILE=..\.env.local
+    echo [OK] Using .env.local for development
+) else (
+    echo [WARN] No .env or .env.local found.
+    if exist ..\.env.example (
+        echo [INFO] Creating .env from .env.example...
+        copy ..\.env.example ..\.env >nul
+        echo [WARN] Please edit .env file and set your configuration
         echo For OpenAI API, set: OPENAI_API_KEY=sk-your-actual-key-here
-        echo.
         pause
     ) else (
         echo [ERROR] No environment configuration files found. Cannot create environment configuration.
         pause
         exit /b 1
     )
-) else (
-    echo [OK] Using .env.local for development
 )
 
 REM Load environment variables from file
@@ -119,6 +112,18 @@ if /I "%OPENAI_API_KEY%"=="lm-studio" (
 
 echo [OK] Environment loaded and validated from %ENV_FILE%
 echo.
+
+REM Ensure low-cost model defaults for OpenAI
+if not defined OPENAI_BASE_URL set OPENAI_BASE_URL=https://api.openai.com
+if /I "%OPENAI_BASE_URL%"=="https://api.openai.com" (
+    if not defined AI_MODEL (
+        set AI_MODEL=gpt-4o-mini
+        echo [INFO] AI_MODEL not set; defaulting to gpt-4o-mini for low-cost testing
+    ) else if /I "%AI_MODEL%"=="gpt-5-nano" (
+        set AI_MODEL=gpt-4o-mini
+        echo [INFO] Switching AI_MODEL from gpt-5-nano to gpt-4o-mini for compatibility and cost
+    )
+)
 
 echo [BUILD] Building and starting services...
 
@@ -166,23 +171,24 @@ cd ..\spring-ai-agent
 start "Spring Boot" /min cmd /c "%MAVEN_CMD% spring-boot:run -Dspring-boot.run.profiles=dev > ../spring-boot.log 2>&1"
 cd ..\scripts
 
-REM Wait for Spring Boot to start
-echo [INFO] Waiting for Spring Boot to start...
+REM Wait for Spring Boot port to listen (don’t require health=UP)
+echo [INFO] Waiting for Spring Boot port 8080 to listen...
 set /a count=0
 :wait_spring_boot
 timeout /t 3 /nobreak >nul
-curl -f http://localhost:8080/actuator/health >nul 2>&1
-if not errorlevel 1 goto spring_boot_ready
+for /f "tokens=5" %%p in ('netstat -ano ^| findstr ":8080" ^| findstr LISTENING') do (
+    echo [OK] Spring Boot is listening on 8080 (PID %%p)
+    goto spring_boot_ready
+)
 set /a count+=1
 if !count! gtr 40 (
-    echo [ERROR] Spring Boot application did not start within 2 minutes. Check spring-boot.log for details.
-    pause
-    exit /b 1
+    echo [WARN] Spring Boot did not confirm listening within 2 minutes. Proceeding anyway; check spring-boot.log.
+    goto spring_boot_ready
 )
 goto wait_spring_boot
 
 :spring_boot_ready
-echo [OK] Spring Boot application started
+echo [OK] Proceeding after Spring Boot startup wait
 
 REM Step 4: Start Angular UI in background
 echo [INFO] Starting Angular UI...

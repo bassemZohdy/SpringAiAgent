@@ -1,7 +1,5 @@
 package ai.demo.agent.base;
 
-import lombok.Getter;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -222,7 +220,6 @@ public class AgentMemory {
     /**
      * Individual memory entry representing a single task execution outcome.
      */
-    @Getter
     public static class MemoryEntry {
         private final long id;
         private final Instant timestamp;
@@ -249,12 +246,19 @@ public class AgentMemory {
             return String.format("MemoryEntry{id=%d, timestamp=%s, success=%s, task='%s', result='%s'}", 
                                id, timestamp, success, taskDescription, resultDescription);
         }
+
+        public long getId() { return id; }
+        public Instant getTimestamp() { return timestamp; }
+        public String getTaskDescription() { return taskDescription; }
+        public String getResultDescription() { return resultDescription; }
+        public boolean isSuccess() { return success; }
+        public long getProcessingTimeNanos() { return processingTimeNanos; }
+        public String getLearnings() { return learnings; }
     }
     
     /**
      * Statistics about the agent's memory.
      */
-    @Getter
     public static class MemoryStats {
         private final int totalEntries;
         private final long successfulTasks;
@@ -278,7 +282,11 @@ public class AgentMemory {
         public double getSuccessRate() {
             return totalEntries > 0 ? (double) successfulTasks / totalEntries : 0.0;
         }
-        
+        public int getTotalEntries() { return totalEntries; }
+        public long getSuccessfulTasks() { return successfulTasks; }
+        public long getFailedTasks() { return failedTasks; }
+        public double getAverageProcessingTimeNanos() { return averageProcessingTimeNanos; }
+    
         @Override
         public String toString() {
             return String.format("MemoryStats{entries=%d, successful=%d, failed=%d, successRate=%.2f%%, hasSummary=%s}",

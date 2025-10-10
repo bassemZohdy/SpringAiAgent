@@ -1,12 +1,9 @@
 package ai.demo.agent.base;
 
-import lombok.Getter;
-
 /**
  * Specialized exception for agent operations, providing context about
  * the agent's state during the error.
  */
-@Getter
 public class AgentException extends Exception {
 
     private final String agentId;
@@ -90,6 +87,10 @@ public class AgentException extends Exception {
     public boolean isStateTransitionError() {
         return attemptedState != null;
     }
+
+    public String getAgentId() { return agentId; }
+    public AgentState getCurrentState() { return currentState; }
+    public AgentState getAttemptedState() { return attemptedState; }
     
     @Override
     public String toString() {

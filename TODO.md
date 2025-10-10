@@ -2,6 +2,20 @@
 
 This file tracks ongoing tasks, improvements, and future enhancements for the Spring AI Agent project.
 
+## 2025-10-10 Updates
+- Completed: Unified dev script under `scripts/run-dev.bat` (root `run-dev.bat` delegates).
+- Completed: `.env` prioritized over `.env.local`; OpenAI low-cost default model `gpt-4o-mini` enabled.
+- Completed: UI proxy updated to hit Spring API at `http://localhost:8080`.
+- Completed: Playwright configuration and smoke e2e added under `ui/` and npm scripts wired.
+- Completed: Agent module build unblocked on JDK 24 by removing Lombok from core classes.
+- Completed: Dev startup robustness and logging improvements; port-listen readiness check.
+- Verified: Servers start and e2e smoke test passes locally.
+
+Follow-ups:
+- Return non-null assistant content from provider and extend e2e to cover message send.
+- Re-enable LM Studio route by switching `ui/proxy.conf.json` back to `http://localhost:1234` when LM Studio chat is enabled.
+- Add integration tests for streaming SSE.
+
 ## 🚀 Current Implementation Status
 
 ### ✅ Completed Features
