@@ -8,20 +8,15 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatSelectModule } from '@angular/material/select';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatBadgeModule } from '@angular/material/badge';
-import { MatDividerModule } from '@angular/material/divider';
 import { TextFieldModule } from '@angular/cdk/text-field';
 import { ThreadService, Thread, ThreadMessage } from '../services/thread.service';
 import { ChatService, ChatMessage, ChatRequest } from '../services/chat.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { marked } from 'marked';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { SafeHtml } from '@angular/platform-browser';
+import { MarkdownService } from '../services/markdown.service';
 
 interface EnhancedMessage {
   id: string;
@@ -51,13 +46,8 @@ interface QuickSuggestion {
     MatButtonModule,
     MatIconModule,
     MatChipsModule,
-    MatProgressSpinnerModule,
-    MatSlideToggleModule,
-    MatSelectModule,
     MatMenuModule,
     MatTooltipModule,
-    MatBadgeModule,
-    MatDividerModule,
     TextFieldModule
   ],
   template: `
@@ -771,16 +761,13 @@ export class EnhancedChatComponent implements OnInit, OnChanges, OnDestroy {
   private typingTimeout: any;
 
   constructor(
-    private http: HttpClient, 
-    private threadService: ThreadService, 
+    private http: HttpClient,
+    private threadService: ThreadService,
     private chatService: ChatService,
-    private sanitizer: DomSanitizer
+    private markdownService: MarkdownService
   ) {
-    // Configure marked for markdown parsing
-    marked.setOptions({
-      breaks: true,
-      gfm: true
-    });
+    // Preload markdown renderer in the background so the first render is immediate
+    void this.markdownService.preload();
     
     // Load theme from localStorage
     this.isDarkTheme = localStorage.getItem('chatTheme') === 'dark';
@@ -834,25 +821,32 @@ export class EnhancedChatComponent implements OnInit, OnChanges, OnDestroy {
     if (this.selectedThread) {
       this.threadService.getThreadMessages(this.selectedThread.id).subscribe({
         next: (threadMessages) => {
-          this.messages = threadMessages.map(tm => ({
-            id: `${tm.id || Math.random()}`,
-            role: tm.role,
-            content: tm.content,
-            htmlContent: tm.role === 'assistant' ? this.parseMarkdown(tm.content) : undefined,
-            timestamp: new Date(tm.created_at * 1000)
-          }));
-          this.filteredMessages = [...this.messages];
+          this.messages = threadMessages.map(tm => {
+            const message: EnhancedMessage = {
+              id: `${tm.id || Math.random()}`,
+              role: tm.role,
+              content: tm.content,
+              timestamp: new Date(tm.created_at * 1000)
+            };
+
+            if (message.role === 'assistant') {
+              this.applyMarkdown(message);
+            }
+
+            return message;
+          });
+          this.refreshFilteredMessages();
           this.scrollToBottom();
         },
         error: (error) => {
           console.error('Error loading thread messages:', error);
           this.messages = [];
-          this.filteredMessages = [];
+          this.refreshFilteredMessages();
         }
       });
     } else {
       this.messages = [];
-      this.filteredMessages = [];
+      this.refreshFilteredMessages();
     }
   }
 
@@ -878,20 +872,12 @@ export class EnhancedChatComponent implements OnInit, OnChanges, OnDestroy {
     this.showSearch = !this.showSearch;
     if (!this.showSearch) {
       this.searchQuery = '';
-      this.onSearch();
+      this.refreshFilteredMessages();
     }
   }
 
   onSearch() {
-    if (!this.searchQuery.trim()) {
-      this.filteredMessages = [...this.messages];
-      return;
-    }
-    
-    const query = this.searchQuery.toLowerCase();
-    this.filteredMessages = this.messages.filter(message =>
-      message.content.toLowerCase().includes(query)
-    );
+    this.refreshFilteredMessages();
   }
 
   isMessageHighlighted(message: EnhancedMessage): boolean {
@@ -987,7 +973,7 @@ export class EnhancedChatComponent implements OnInit, OnChanges, OnDestroy {
         this.currentMessage = userMessage.content;
         // Remove the old assistant response
         this.messages.splice(messageIndex, 1);
-        this.filteredMessages = [...this.messages];
+        this.refreshFilteredMessages();
         this.sendMessage();
       }
     }
@@ -1037,7 +1023,7 @@ export class EnhancedChatComponent implements OnInit, OnChanges, OnDestroy {
     };
     
     this.messages.push(userMessage);
-    this.filteredMessages = [...this.messages];
+    this.refreshFilteredMessages();
     
     const messageToSend = this.currentMessage;
     this.currentMessage = '';
@@ -1068,12 +1054,12 @@ export class EnhancedChatComponent implements OnInit, OnChanges, OnDestroy {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
           content: response.choices[0].message.content,
-          htmlContent: this.parseMarkdown(response.choices[0].message.content),
           timestamp: new Date()
         };
-        
+
+        this.applyMarkdown(assistantMessage);
         this.messages.push(assistantMessage);
-        this.filteredMessages = [...this.messages];
+        this.refreshFilteredMessages();
         this.scrollToBottom();
       },
       error: (error) => {
@@ -1087,8 +1073,9 @@ export class EnhancedChatComponent implements OnInit, OnChanges, OnDestroy {
           content: 'I apologize, but I encountered an error. Please check the connection and try again.',
           timestamp: new Date()
         };
+        this.applyMarkdown(errorMessage);
         this.messages.push(errorMessage);
-        this.filteredMessages = [...this.messages];
+        this.refreshFilteredMessages();
         this.scrollToBottom();
       }
     });
@@ -1127,14 +1114,29 @@ export class EnhancedChatComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  private parseMarkdown(content: string): SafeHtml {
-    const html = marked(content);
-    if (typeof html === 'string') {
-      return this.sanitizer.bypassSecurityTrustHtml(html);
-    } else {
-      // Handle promise case - for now return sanitized original content
-      return this.sanitizer.bypassSecurityTrustHtml(content);
+  private applyMarkdown(message: EnhancedMessage) {
+    message.htmlContent = this.markdownService.renderSync(message.content);
+
+    this.markdownService.render(message.content)
+      .then(html => {
+        message.htmlContent = html;
+        this.refreshFilteredMessages();
+      })
+      .catch(error => {
+        console.error('Failed to render markdown content', error);
+      });
+  }
+
+  private refreshFilteredMessages() {
+    if (!this.searchQuery.trim()) {
+      this.filteredMessages = [...this.messages];
+      return;
     }
+
+    const query = this.searchQuery.toLowerCase();
+    this.filteredMessages = this.messages.filter(message =>
+      message.content.toLowerCase().includes(query)
+    );
   }
 
   // Utility functions

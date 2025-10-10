@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
+import { OpenAIErrorResponse } from './api.types';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -14,6 +15,11 @@ export interface ChatRequest {
   temperature?: number;
   max_tokens?: number;
   thread_id?: string;
+}
+
+export interface CreateCompletionOptions {
+  stream: boolean;
+  provider?: string;
 }
 
 export interface ChatResponse {
@@ -55,11 +61,11 @@ export interface StreamChunk {
   providedIn: 'root'
 })
 export class ChatService {
-  private baseUrl = '/v1';
+  private readonly baseUrl = '/v1';
 
   constructor(private http: HttpClient) {}
 
-  createCompletion(request: ChatRequest, options: { stream: boolean, provider?: string } = { stream: false }): Observable<ChatResponse> {
+  createCompletion(request: ChatRequest, options: CreateCompletionOptions = { stream: false }): Observable<ChatResponse> {
     let headers = new HttpHeaders({
       'Content-Type': 'application/json'
     });
@@ -101,7 +107,7 @@ export class ChatService {
           // Try to parse OpenAI-compatible error
           return response.text().then(text => {
             try {
-              const json = JSON.parse(text);
+              const json = JSON.parse(text) as OpenAIErrorResponse;
               observer.error(json);
             } catch {
               observer.error({ status: response.status, message: response.statusText, body: text });
