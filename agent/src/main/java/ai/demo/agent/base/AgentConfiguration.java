@@ -76,10 +76,19 @@ public class AgentConfiguration {
     @SuppressWarnings("unchecked")
     public <T> T getProperty(String key, T defaultValue) {
         Object value = properties.get(key);
-        if (value != null && defaultValue.getClass().isInstance(value)) {
-            return (T) value;
+        if (value == null) {
+            return defaultValue;
         }
-        return defaultValue;
+
+        if (defaultValue != null && !defaultValue.getClass().isInstance(value)) {
+            return defaultValue;
+        }
+
+        try {
+            return (T) value;
+        } catch (ClassCastException ex) {
+            return defaultValue;
+        }
     }
     
     /**
@@ -155,7 +164,7 @@ public class AgentConfiguration {
      * Builder for creating agent configurations.
      */
     public static class Builder {
-        private Map<String, Object> properties = new HashMap<>();
+        private final Map<String, Object> properties = new HashMap<>();
         private String instructions;
         private Duration taskTimeout = Duration.ofMinutes(5);
         private int maxConcurrentTasks = 1;
