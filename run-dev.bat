@@ -17,7 +17,7 @@ REM Build agent library first
 echo.
 echo Building agent library...
 cd agent
-call mvn clean install
+call ..\mvnw.cmd clean install
 if errorlevel 1 (
     echo Failed to build agent library
     exit /b 1
@@ -27,7 +27,7 @@ REM Start Spring Boot application in background
 echo.
 echo Starting Spring Boot application...
 cd ..\spring-ai-agent
-start "SpringAI-Agent" /min cmd /c "mvn spring-boot:run -Dspring-boot.run.profiles=dev"
+start "SpringAI-Agent" /min cmd /c "..\mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=dev"
 
 REM Give Spring Boot time to start
 timeout /t 10

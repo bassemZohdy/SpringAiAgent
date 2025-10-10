@@ -269,8 +269,9 @@ interface QuickSuggestion {
       height: 100%;
       display: flex;
       flex-direction: column;
-      max-width: 1000px;
-      margin: 0 auto;
+      width: 100%;
+      max-width: 100%;
+      margin: 0;
       transition: all 0.3s ease;
       border-radius: 12px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -578,11 +579,21 @@ interface QuickSuggestion {
     .input-row {
       display: flex;
       gap: 12px;
-      align-items: flex-end;
+      align-items: center;
+      flex-wrap: nowrap;
+      width: 100%;
     }
     
     .message-input {
-      flex: 1;
+      flex: 1 1 auto;
+      min-width: 0; /* allow flex child to shrink properly */
+      width: 100%;
+    }
+
+    /* Ensure Material form field and textarea stretch fully */
+    .message-input .mat-mdc-form-field,
+    .message-input .mdc-text-field {
+      width: 100%;
     }
     
     .input-indicators {
@@ -598,12 +609,14 @@ interface QuickSuggestion {
     
     .quick-actions {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
+      align-items: center;
       gap: 8px;
     }
     
     .send-button {
       position: relative;
+      align-self: center;
       transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
       box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
