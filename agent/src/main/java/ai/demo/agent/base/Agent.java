@@ -42,3 +42,4 @@ public interface Agent<TASK extends Task, RESULT> {
     default void onTaskFailed(TASK task, Throwable error) {
     }
 }
+

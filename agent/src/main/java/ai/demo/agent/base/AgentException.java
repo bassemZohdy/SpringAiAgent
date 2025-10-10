@@ -1,11 +1,14 @@
 package ai.demo.agent.base;
 
+import lombok.Getter;
+
 /**
  * Specialized exception for agent operations, providing context about
  * the agent's state during the error.
  */
+@Getter
 public class AgentException extends Exception {
-    
+
     private final String agentId;
     private final AgentState currentState;
     private final AgentState attemptedState;
@@ -80,35 +83,8 @@ public class AgentException extends Exception {
     }
     
     /**
-     * Get the ID of the agent that encountered this error.
-     * 
-     * @return the agent ID, or null if not available
-     */
-    public String getAgentId() {
-        return agentId;
-    }
-    
-    /**
-     * Get the current state of the agent when this error occurred.
-     * 
-     * @return the current state, or null if not available
-     */
-    public AgentState getCurrentState() {
-        return currentState;
-    }
-    
-    /**
-     * Get the state the agent was trying to transition to when this error occurred.
-     * 
-     * @return the attempted state, or null if not a state transition error
-     */
-    public AgentState getAttemptedState() {
-        return attemptedState;
-    }
-    
-    /**
      * Check if this is a state transition error.
-     * 
+     *
      * @return true if this error occurred during a state transition
      */
     public boolean isStateTransitionError() {

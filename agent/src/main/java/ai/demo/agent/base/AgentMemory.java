@@ -1,5 +1,7 @@
 package ai.demo.agent.base;
 
+import lombok.Getter;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -76,7 +78,7 @@ public class AgentMemory {
      * @return immutable list of memory entries
      */
     public List<MemoryEntry> getEntries() {
-        return new ArrayList<>(entries);
+        return List.copyOf(entries);
     }
     
     /**
@@ -104,7 +106,7 @@ public class AgentMemory {
         }
         
         String searchTerm = keyword.toLowerCase();
-        return entries.stream()
+        return getEntries().stream()
             .filter(entry -> entry.getTaskDescription().toLowerCase().contains(searchTerm) ||
                            entry.getResultDescription().toLowerCase().contains(searchTerm) ||
                            (entry.getLearnings() != null && 
@@ -161,7 +163,7 @@ public class AgentMemory {
      */
     public void compact() {
         // Keep only the most recent 70% of entries
-        int targetSize = (int) (maxEntries * 0.7);
+        int targetSize = Math.max(1, (int) (maxEntries * 0.7));
         
         List<MemoryEntry> allEntries = getEntries();
         if (allEntries.size() <= targetSize) {
@@ -170,9 +172,8 @@ public class AgentMemory {
         
         // Clear all entries and add back the most recent ones
         entries.clear();
-        List<MemoryEntry> recentEntries = allEntries.subList(
-            allEntries.size() - targetSize, 
-            allEntries.size()
+        List<MemoryEntry> recentEntries = new ArrayList<>(
+            allEntries.subList(allEntries.size() - targetSize, allEntries.size())
         );
         entries.addAll(recentEntries);
     }
@@ -221,6 +222,7 @@ public class AgentMemory {
     /**
      * Individual memory entry representing a single task execution outcome.
      */
+    @Getter
     public static class MemoryEntry {
         private final long id;
         private final Instant timestamp;
@@ -229,10 +231,10 @@ public class AgentMemory {
         private final boolean success;
         private final long processingTimeNanos;
         private final String learnings;
-        
-        public MemoryEntry(long id, Instant timestamp, String taskDescription, 
-                          String resultDescription, boolean success, 
-                          long processingTimeNanos, String learnings) {
+
+        public MemoryEntry(long id, Instant timestamp, String taskDescription,
+                           String resultDescription, boolean success,
+                           long processingTimeNanos, String learnings) {
             this.id = id;
             this.timestamp = timestamp;
             this.taskDescription = taskDescription;
@@ -241,14 +243,6 @@ public class AgentMemory {
             this.processingTimeNanos = processingTimeNanos;
             this.learnings = learnings;
         }
-        
-        public long getId() { return id; }
-        public Instant getTimestamp() { return timestamp; }
-        public String getTaskDescription() { return taskDescription; }
-        public String getResultDescription() { return resultDescription; }
-        public boolean isSuccess() { return success; }
-        public long getProcessingTimeNanos() { return processingTimeNanos; }
-        public String getLearnings() { return learnings; }
         
         @Override
         public String toString() {
@@ -260,29 +254,29 @@ public class AgentMemory {
     /**
      * Statistics about the agent's memory.
      */
+    @Getter
     public static class MemoryStats {
         private final int totalEntries;
         private final long successfulTasks;
         private final long failedTasks;
         private final double averageProcessingTimeNanos;
         private final boolean hasSummary;
-        
+
         public MemoryStats(int totalEntries, long successfulTasks, long failedTasks,
-                          double averageProcessingTimeNanos, boolean hasSummary) {
+                           double averageProcessingTimeNanos, boolean hasSummary) {
             this.totalEntries = totalEntries;
             this.successfulTasks = successfulTasks;
             this.failedTasks = failedTasks;
             this.averageProcessingTimeNanos = averageProcessingTimeNanos;
             this.hasSummary = hasSummary;
         }
-        
-        public int getTotalEntries() { return totalEntries; }
-        public long getSuccessfulTasks() { return successfulTasks; }
-        public long getFailedTasks() { return failedTasks; }
-        public double getAverageProcessingTimeNanos() { return averageProcessingTimeNanos; }
-        public boolean hasSummary() { return hasSummary; }
-        public double getSuccessRate() { 
-            return totalEntries > 0 ? (double) successfulTasks / totalEntries : 0.0; 
+
+        public boolean hasSummary() {
+            return hasSummary;
+        }
+
+        public double getSuccessRate() {
+            return totalEntries > 0 ? (double) successfulTasks / totalEntries : 0.0;
         }
         
         @Override

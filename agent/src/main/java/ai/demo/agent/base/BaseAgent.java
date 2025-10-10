@@ -2,8 +2,6 @@ package ai.demo.agent.base;
 
 import ai.demo.agent.base.task.Task;
 
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -54,7 +52,7 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements Agent<TASK
         this.agentName = Objects.requireNonNull(agentName, "Agent name cannot be null");
         this.version = Objects.requireNonNull(version, "Version cannot be null");
         this.configuration = Objects.requireNonNull(configuration, "Configuration cannot be null");
-        this.capabilities = new ArrayList<>(Objects.requireNonNull(capabilities, "Capabilities cannot be null"));
+        this.capabilities = List.copyOf(Objects.requireNonNull(capabilities, "Capabilities cannot be null"));
         this.metrics = new AgentMetrics();
         this.memory = new AgentMemory();
     }
@@ -150,7 +148,7 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements Agent<TASK
     
     @Override
     public List<String> getCapabilities() {
-        return new ArrayList<>(capabilities);
+        return capabilities;
     }
     
     @Override
@@ -425,6 +423,7 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements Agent<TASK
      * 
      * @param task the task that started
      */
+    @Override
     public void onTaskStarted(TASK task) {
         // Default implementation does nothing
     }
@@ -436,6 +435,7 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements Agent<TASK
      * @param task the task that completed
      * @param result the result produced
      */
+    @Override
     public void onTaskCompleted(TASK task, RESULT result) {
         // Default implementation does nothing
     }
@@ -447,7 +447,8 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements Agent<TASK
      * @param task the task that failed
      * @param exception the exception that caused the failure
      */
-    protected void onTaskFailed(TASK task, Exception exception) {
+    @Override
+    public void onTaskFailed(TASK task, Throwable exception) {
         // Default implementation does nothing
     }
     
