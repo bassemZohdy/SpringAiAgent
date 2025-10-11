@@ -281,7 +281,12 @@ graph TB
 
 ```
 spring-ai-agent/
-├── agent/                 # Java library for Agent framework
+├── README.md              # Main project overview
+├── docker-compose.yml     # Docker configuration
+├── run-dev.bat           # Development launcher (Windows)
+├── pom.xml               # Maven configuration
+│
+├── agent/                # 🤖 Agent library
 │   ├── src/main/java/ai/demo/agent/
 │   │   ├── base/                   # Base abstractions
 │   │   │   ├── Agent.java              # Base agent interface
@@ -301,7 +306,8 @@ spring-ai-agent/
 │   │       ├── TaskAgentMetrics.java   # Task-specific metrics
 │   │       └── ChatAgentMetrics.java   # Chat-specific metrics
 │   └── src/test/java/              # Agent tests
-├── spring-ai-agent/      # Spring Boot application
+│
+├── spring-ai-agent/     # 🌐 Spring Boot application
 │   ├── src/main/java/ai/demo/springagent/
 │   │   ├── controller/             # REST controllers
 │   │   │   ├── ChatController.java
@@ -313,16 +319,40 @@ spring-ai-agent/
 │   │   ├── provider/               # LLM providers
 │   │   └── config/                 # Configuration
 │   └── src/test/                   # Integration tests
-├── ui/                   # Angular frontend
+│
+├── ui/                  # 🎨 Angular frontend
 │   ├── src/app/
 │   │   ├── services/               # API services
 │   │   ├── components/             # UI components
 │   │   └── models/                 # TypeScript interfaces
 │   └── src/test/                   # Frontend tests
-├── docs/                 # Documentation
-├── scripts/              # Development scripts
-├── docker-compose.yml    # Docker orchestration
-└── README.md
+│
+├── docs/                # 📚 Documentation
+│   ├── README.md          # Documentation index
+│   ├── ARCHITECTURE.md    # System architecture
+│   ├── API_USAGE.md       # API documentation
+│   ├── AGENTS.md          # Agent framework guide
+│   ├── PROJECT_STATUS.md  # Project status
+│   ├── TODO.md            # Project roadmap
+│   └── ...other docs
+│
+├── scripts/             # 🚀 Development scripts
+│   ├── run-dev.sh        # Development launcher (Linux/macOS)
+│   ├── run-dev.bat       # Development launcher (Windows)
+│   ├── start.sh          # Service starter (Linux/macOS)
+│   └── start.bat         # Service starter (Windows)
+│
+├── tools/               # 🔧 Development tools
+│   ├── mock-servers/     # Mock servers for testing
+│   │   ├── mock-server.js
+│   │   └── simple-mock-server.js
+│   └── testing/          # Testing utilities
+│       └── test-agent-integration.js
+│
+└── config/              # ⚙️ Configuration files
+    ├── vscode/           # VSCode settings
+    ├── claude/           # Claude Code settings
+    └── env/              # Environment templates
 ```
 
 ## Quick Start with Docker
@@ -358,7 +388,7 @@ spring-ai-agent/
 ./scripts/run-dev.sh
 
 # Windows
-scripts\run-dev.bat
+run-dev.bat
 ```
 
 ## 🔌 API Endpoints

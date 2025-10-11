@@ -8,7 +8,7 @@
 - **Spring Boot API**: `spring-ai-agent/src/main/java`
 - **Test Structure**: Mirrors main package structure in both modules
 - **Angular UI**: `ui/src/app` with components, services; tests under `ui/src` as `*.spec.ts`.
-- **Scripts**: `scripts/` (Windows/Linux dev helpers), `run-dev.bat` (root), `docker-compose.yml` for containerized run.
+- **Scripts**: `scripts/` (Windows/Linux dev helpers), `run-dev.bat` (root launcher), `docker-compose.yml` for containerized run.
 
 ### Agent Library Package Organization
 ```
