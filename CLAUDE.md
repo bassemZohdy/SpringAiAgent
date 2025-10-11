@@ -57,6 +57,10 @@ cd ui && npm run test:e2e
 # OpenAI API validation tests (requires OpenAI API key)
 ./scripts/test-openai.sh    # Linux/macOS
 scripts\test-openai.bat     # Windows
+
+# LM Studio API validation tests (requires LM Studio running locally)
+./scripts/test-lm-studio.sh # Linux/macOS
+scripts\test-lm-studio.bat  # Windows
 ```
 
 ### Docker Development
@@ -82,6 +86,8 @@ Core abstractions in `ai.demo.agent.base` package with state machine architectur
 **Core Interfaces:**
 - **Agent<TASK, RESULT>**: Base interface for task processors with lifecycle management
 - **AiAgent<TASK, PROMPT, CHAT_RESPONSE, RESULT>**: Extension for AI/LLM agents with transformation pipeline
+- **ChatAgent<REQUEST, RESPONSE>**: Specialization for conversational interactions and dialogue-based agents
+- **TaskAgent<TASK, RESULT>**: Specialization for discrete task processing with structured, goal-oriented work
 - **BaseAgent**: Abstract implementation with single-threaded execution, metrics, memory, and state management
 
 **State Machine Flow:**
@@ -101,6 +107,12 @@ OpenAI-compatible REST API in `ai.demo.springagent` package:
 **Core Controllers:**
 - **ChatController**: `/v1/chat/completions` (streaming + non-streaming), `/v1/models`, `/v1/sessions/stats`
 - **ThreadController**: OpenAI Assistants API-compatible thread management
+- **AgentController**: `/api/v1/agent` endpoints for agent framework capabilities:
+  - `/api/v1/agent/chat` and `/api/v1/agent/chat/memory` - Chat processing with agent framework
+  - `/api/v1/agent/metrics` - Agent performance metrics and status
+  - `/api/v1/agent/health` - Agent health check endpoint
+  - `/api/v1/agent/memory/compact` and `/api/v1/agent/memory/clear` - Memory management
+  - `/api/v1/agent/capabilities` - Agent capabilities and configuration information
 
 **Key Services:**
 - **ChatService**: Spring AI ChatClient integration with provider abstraction
@@ -236,13 +248,22 @@ The implementation maintains **full OpenAI API compatibility**:
 - OpenAI error response format with proper HTTP status codes
 - Drop-in replacement capability for OpenAI clients
 
+## Additional Documentation
+
+Refer to these additional documentation files for comprehensive guidance:
+- **TODO.md**: Current project tasks, roadmap, and issue tracking (single source of truth for project status)
+- **AGENTS.md**: Development guidelines and coding standards for agent implementations
+- **API_USAGE.md**: API usage examples and integration patterns
+- **PROJECT_STATUS.md**: Project status overview and milestones
+- **docs/** folder: Additional technical documentation and architecture guides
+
 ## Task Management
 
-Refer to `TODO.md` for current project tasks, roadmap, and issue tracking. This file is actively maintained and should be consulted for:
+The TODO.md file is actively maintained and should be consulted for:
 - Current implementation status and completed features
 - Pending tasks with priority levels (High/Medium/Low)
 - Known issues and technical debt items
 - Future enhancement plans and architectural decisions
 - Standard task assignment format for new work
 
-The TODO.md file is the single source of truth for project status and should be updated as features are completed or new requirements are identified.
+This file should be updated as features are completed or new requirements are identified.

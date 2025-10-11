@@ -5,6 +5,7 @@ import ai.demo.agent.base.task.TaskAttempt;
 import ai.demo.agent.base.task.TaskPriority;
 import ai.demo.agent.base.task.TaskSize;
 import ai.demo.agent.base.task.TaskStatus;
+import ai.demo.agent.task.TaskAgent;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

@@ -1,6 +1,7 @@
 package ai.demo.agent.base;
 
 import ai.demo.agent.base.task.Task;
+import ai.demo.agent.metrics.TaskAgentMetrics;
 
 import java.time.Instant;
 import java.util.List;
@@ -12,13 +13,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * Abstract base implementation of the Agent interface providing common functionality
- * including lifecycle management, metrics collection, and single-threaded task processing.
- * 
- * @param <TASK> The type of task/input the agent processes (must extend Task)
- * @param <RESULT> The type of result/output the agent produces
- */
 public abstract class BaseAgent<TASK extends Task, RESULT> implements TaskAgent<TASK, RESULT> {
     
     // Core identity and configuration
@@ -35,19 +29,11 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements TaskAgent<
     
     // Execution infrastructure
     private volatile ExecutorService executor;
-    private final AgentMetrics metrics;
+    private final TaskAgentMetrics metrics;
     
     // Memory system
     private final AgentMemory memory;
     
-    /**
-     * Construct a new base agent with the specified configuration.
-     * 
-     * @param agentName the human-readable name for this agent
-     * @param version the version of this agent
-     * @param configuration the agent configuration
-     * @param capabilities the list of capabilities this agent supports
-     */
     protected BaseAgent(String agentName, String version, AgentConfiguration configuration,
                        List<String> capabilities) {
         this.agentId = UUID.randomUUID().toString();
@@ -56,17 +42,10 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements TaskAgent<
         this.createdAt = Instant.now();
         this.configuration = Objects.requireNonNull(configuration, "Configuration cannot be null");
         this.capabilities = List.copyOf(Objects.requireNonNull(capabilities, "Capabilities cannot be null"));
-        this.metrics = new AgentMetrics();
+        this.metrics = new TaskAgentMetrics();
         this.memory = new AgentMemory();
     }
     
-    /**
-     * Construct a new base agent with default configuration.
-     * 
-     * @param agentName the human-readable name for this agent
-     * @param version the version of this agent
-     * @param capabilities the list of capabilities this agent supports
-     */
     protected BaseAgent(String agentName, String version, List<String> capabilities) {
         this(agentName, version, AgentConfiguration.defaultConfiguration(), capabilities);
     }
@@ -82,13 +61,17 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements TaskAgent<
         
         return CompletableFuture.supplyAsync(() -> {
             long startTime = System.nanoTime();
-            metrics.recordTaskStarted();
+            metrics.recordOperationStarted();
             onTaskStarted(task);
-            
+
             try {
                 RESULT result = doProcess(task);
                 long processingTime = System.nanoTime() - startTime;
-                metrics.recordTaskSucceeded(processingTime);
+
+                // Use TaskAgentMetrics method with task-specific information
+                long inputSize = task.getInputSize();
+                long outputSize = result != null ? estimateOutputSize(result) : 0;
+                metrics.recordTaskSucceeded(processingTime, inputSize, outputSize, task.getPriority());
                 
                 // Record successful execution in memory
                 memory.recordExecution(task, result, true, processingTime, null);
@@ -98,7 +81,10 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements TaskAgent<
                 
             } catch (Exception e) {
                 long processingTime = System.nanoTime() - startTime;
-                metrics.recordTaskFailed(processingTime);
+
+                // Use TaskAgentMetrics method with task-specific information
+                long inputSize = task.getInputSize();
+                metrics.recordTaskFailed(processingTime, inputSize, task.getPriority());
                 
                 // Record failed execution in memory with error details
                 String learnings = "Error: " + e.getClass().getSimpleName() + 
@@ -111,14 +97,6 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements TaskAgent<
         }, executor);
     }
     
-    /**
-     * Abstract method that subclasses must implement to define their task processing logic.
-     * This method is called from within the single-threaded executor.
-     * 
-     * @param task the task to process
-     * @return the result of processing the task
-     * @throws Exception if processing fails
-     */
     protected abstract RESULT doProcess(TASK task) throws Exception;
     
     // === Agent Identity ===
@@ -343,7 +321,7 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements TaskAgent<
     // === Metrics ===
     
     @Override
-    public AgentMetrics getMetrics() {
+    public TaskAgentMetrics getMetrics() {
         return metrics;
     }
     
@@ -372,10 +350,14 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements TaskAgent<
         }
     }
     
+    protected long estimateOutputSize(RESULT result) {
+        return result != null ? 1 : 0;
+    }
+
     /**
      * Generate a summary of the agent's memory for compacting.
      * Subclasses can override this to provide custom summarization logic.
-     * 
+     *
      * @return a summary of the agent's experiences and learnings, or null if no summary can be generated
      */
     protected String generateMemorySummary() {
