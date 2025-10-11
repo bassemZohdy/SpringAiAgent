@@ -99,6 +99,17 @@ class BaseAgentTest {
     }
 
     @Test
+    void testLegacyOnTaskFailedOverrideStillInvoked() throws AgentException {
+        try (LegacyFailureHookAgent agent = new LegacyFailureHookAgent()) {
+            agent.start();
+            SimpleTask task = SimpleTask.failure("legacy");
+
+            assertThrows(CompletionException.class, () -> agent.process(task).join());
+            assertEquals(1, agent.getLegacyFailedCount());
+        }
+    }
+
+    @Test
     void testProcessWhenNotRunningFailsImmediately() {
         try (TestAgent agent = new TestAgent()) {
             SimpleTask task = SimpleTask.success("idle");
@@ -207,6 +218,50 @@ class BaseAgentTest {
 
         int getFailedCount() {
             return failedCount.get();
+        }
+
+        @Override
+        public void close() {
+            AgentState currentState = getState();
+            if (currentState == AgentState.STARTED || currentState == AgentState.PAUSED) {
+                try {
+                    stop();
+                } catch (AgentException ignored) {
+                    // ignored for tests
+                }
+            }
+        }
+    }
+
+    private static final class LegacyFailureHookAgent extends BaseAgent<SimpleTask, String> implements AutoCloseable {
+        private final AtomicInteger legacyFailedCount = new AtomicInteger();
+
+        private LegacyFailureHookAgent() {
+            super(
+                "LegacyAgent",
+                "1.0.0",
+                AgentConfiguration.builder()
+                    .instructions("Follow the test instructions")
+                    .build(),
+                List.of("echo", "summarize")
+            );
+        }
+
+        @Override
+        protected String doProcess(SimpleTask task) {
+            if (task.shouldFail()) {
+                throw new IllegalStateException("Intentional failure");
+            }
+            return "Processed: " + task.getDescription();
+        }
+
+        @Override
+        protected void onTaskFailed(SimpleTask task, Exception exception) {
+            legacyFailedCount.incrementAndGet();
+        }
+
+        int getLegacyFailedCount() {
+            return legacyFailedCount.get();
         }
 
         @Override
