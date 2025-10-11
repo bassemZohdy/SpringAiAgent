@@ -86,6 +86,11 @@ public class ChatAgentMetrics extends AgentMetrics {
         return maxConcurrentConversations.get();
     }
 
+    // Backward compatibility for earlier test method name
+    public long getMaxConcurrentConcurrentConversations() {
+        return getMaxConcurrentConversations();
+    }
+
     public double getConversationCompletionRate() {
         long total = conversationsStarted.get();
         return total > 0 ? (double) conversationsCompleted.get() / total : 0.0;
