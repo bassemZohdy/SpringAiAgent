@@ -1,16 +1,30 @@
 server:
   port: 0
 
-spring:
+
+  spring:
   ai:
     openai:
-      api-key: test-key
+      api-key: test-key-12345
+      base-url: https://api.openai.com
       chat:
         options:
           model: gpt-3.5-turbo
           temperature: 0.7
+          max-tokens: 100
+
+# Agent configuration for testing
+agent:
+  enabled: true
+  instructions: "You are a helpful AI test assistant. Provide clear, accurate, and concise responses for testing purposes."
+  task-timeout: 30s
+  shutdown-timeout: 5s
+  enable-metrics: true
+  max-concurrent-tasks: 1
 
 logging:
   level:
+    ai.demo: DEBUG
     ai.demo.springagent: DEBUG
+    org.springframework.web: DEBUG
     root: WARN
