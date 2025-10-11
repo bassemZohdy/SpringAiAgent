@@ -217,7 +217,10 @@ application-*.yml
 !application-dev.yml
 !application-test.yml
 
-# Mock servers
+# Mock servers (moved to tools/mock-servers/)
 mock-server.js
 simple-mock-server.js
+
+# Configuration files (moved to config/)
 .claude/settings.local.json
+.vscode/settings.json
