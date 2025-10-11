@@ -5,15 +5,26 @@ export default defineConfig({
   timeout: 30_000,
   expect: { timeout: 5_000 },
   retries: 0,
+  fullyParallel: true,
+  reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:4200',
-    trace: 'on-first-retry'
+    trace: 'on-first-retry',
+    video: 'retain-on-failure',
+    screenshot: 'only-on-failure'
   },
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] }
     }
-  ]
+  ],
+  webServer: process.env.E2E_SKIP_SERVER === '1' ? undefined : {
+    command: 'npm start',
+    cwd: 'ui',
+    port: 4200,
+    reuseExistingServer: true,
+    timeout: 120_000
+  },
+  outputDir: 'ui/test-results'
 });
-
