@@ -102,7 +102,7 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements Agent<TASK
                                  (e.getMessage() != null ? " - " + e.getMessage() : "");
                 memory.recordExecution(task, null, false, processingTime, learnings);
                 
-                onTaskFailed(task, e);
+                onTaskFailed(task, (Throwable) e);
                 throw new RuntimeException("Task processing failed", e);
             }
         }, executor);
@@ -449,6 +449,26 @@ public abstract class BaseAgent<TASK extends Task, RESULT> implements Agent<TASK
      */
     @Override
     public void onTaskFailed(TASK task, Throwable exception) {
+        if (exception instanceof Exception ex) {
+            onTaskFailed(task, ex);
+        } else if (exception != null) {
+            onTaskFailed(task, new Exception(exception));
+        } else {
+            onTaskFailed(task, (Exception) null);
+        }
+    }
+
+    /**
+     * Legacy callback invoked when a task fails with an {@link Exception}.
+     *
+     * <p>Retained for backward compatibility with agents that override the
+     * previous {@code onTaskFailed} signature. New implementations should
+     * override {@link #onTaskFailed(Task, Throwable)} instead.</p>
+     *
+     * @param task the task that failed
+     * @param exception the exception that caused the failure (may be {@code null})
+     */
+    protected void onTaskFailed(TASK task, Exception exception) {
         // Default implementation does nothing
     }
     
